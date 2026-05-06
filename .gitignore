@@ -1,0 +1,43 @@
+# ──────────────────────────────────────────────
+# GymFlow Pro — Root .gitignore
+# ──────────────────────────────────────────────
+
+# === NEVER COMMIT — Secrets ===
+.env
+.env.*
+!.env.example
+
+# === Node ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# === Build outputs ===
+dist/
+dist-ssr/
+build/
+*.local
+
+# === Logs ===
+logs/
+*.log
+
+# === Editor ===
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Tests / Coverage ===
+coverage/
+.nyc_output/
