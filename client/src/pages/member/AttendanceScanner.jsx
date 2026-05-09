@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Html5Qrcode } from 'html5-qrcode';
 import { DotLottiePlayer } from '@dotlottie/react-player';
-import { CameraOff, Loader2, ArrowLeft, ShieldCheck, RefreshCcw } from 'lucide-react';
+import { CameraOff, Loader2, ArrowLeft, ShieldCheck, RefreshCcw, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { attendanceApi } from '../../api';
 import { toast } from 'react-hot-toast';
