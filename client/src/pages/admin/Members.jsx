@@ -9,6 +9,7 @@ import { StatusBadge, PlanBadge, DaysLeftBar } from '../../components/ui/Badges'
 import Avatar from '../../components/ui/Avatar';
 import Modal from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
+import CyberMatrix from '../../components/ui/CyberMatrix';
 
 // ─── Add Member Modal ───────────────────────────────────────
 function AddMemberModal({ isOpen, onClose, onSuccess }) {
@@ -254,11 +255,14 @@ export default function Members() {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 10 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      style={{ display: 'flex', flexDirection: 'column', gap: 32, paddingBottom: 40 }}
-    >
+    <div style={{ position: 'relative', minHeight: '100%' }}>
+      <CyberMatrix opacity={0.03} />
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 32, paddingBottom: 40 }}
+      >
       {/* Header Section */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
         <div>
@@ -415,5 +419,6 @@ export default function Members() {
         onSuccess={fetchMembers} 
       />
     </motion.div>
+    </div>
   );
 }

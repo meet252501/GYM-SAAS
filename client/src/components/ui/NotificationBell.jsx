@@ -1,98 +1,192 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Bell, Check, Info, AlertTriangle, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, CreditCard, Users, Calendar, Zap, Trophy } from 'lucide-react';
-
-const MOCK_NOTIFICATIONS = [
-  { id: 1, type: 'expiry', icon: CreditCard, color: '#ef4444', title: 'Membership Expiring', body: 'Priya Patel\'s plan expires in 3 days', time: '5m ago', unread: true },
-  { id: 2, type: 'member', icon: Users, color: '#10b981', title: 'New Member Joined', body: 'Ananya Bose signed up for Basic plan', time: '1h ago', unread: true },
-  { id: 3, type: 'class', icon: Calendar, color: '#3b82f6', title: 'Class Full', body: 'HIIT Blast is at full capacity (15/15)', time: '2h ago', unread: true },
-  { id: 4, type: 'payment', icon: CreditCard, color: '#f59e0b', title: 'Payment Received', body: 'Arjun Sharma paid ₹1,499 (Premium)', time: '3h ago', unread: false },
-  { id: 5, type: 'streak', icon: Trophy, color: '#8b5cf6', title: 'Leaderboard Update', body: 'Vikram Singh now leads with 312 pts', time: '5h ago', unread: false },
-  { id: 6, type: 'expiry', icon: Zap, color: '#ef4444', title: 'Overdue Payment', body: 'Sneha Reddy — ₹799 overdue (Basic)', time: '1d ago', unread: false },
-];
+import { notificationsApi } from '../../api';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function NotificationBell() {
-  const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const ref = useRef(null);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const dropdownRef = useRef(null);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const fetchNotifications = async () => {
+    try {
+      const [notifsRes, countRes] = await Promise.all([
+        notificationsApi.getAll(),
+        notificationsApi.getUnreadCount()
+      ]);
+      setNotifications(notifsRes.data.data);
+      setUnreadCount(countRes.data.count);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  };
 
   useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    fetchNotifications();
+    // Refresh every 60 seconds
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
   }, []);
 
-  const markAllRead = () => setNotifications(n => n.map(x => ({ ...x, unread: false })));
-  const dismiss = (id) => setNotifications(n => n.filter(x => x.id !== id));
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+    if (!isOpen) {
+      fetchNotifications();
+    }
+  };
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      await notificationsApi.markAsRead(id);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationsApi.markAllRead();
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Failed to mark all read:', error);
+    }
+  };
+
+  const getIcon = (type) => {
+    switch (type) {
+      case 'membership': return <AlertTriangle size={16} color="var(--warning)" />;
+      case 'badge': return <Trophy size={16} color="var(--primary)" />;
+      case 'leaderboard': return <Check size={16} color="var(--success)" />;
+      default: return <Info size={16} color="var(--info)" />;
+    }
+  };
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <motion.button whileTap={{ scale: 0.9 }} onClick={() => setOpen(o => !o)}
-        className="btn btn-ghost btn-icon btn-sm" style={{ position: 'relative' }}>
-        <motion.div animate={unreadCount > 0 ? { rotate: [0, -12, 12, -8, 8, 0] } : {}}
-          transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 4 }}>
-          <Bell size={17} />
-        </motion.div>
+    <div style={{ position: 'relative' }} ref={dropdownRef}>
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={handleToggle}
+        style={{
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          width: 38, height: 38,
+          borderRadius: 12,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: unreadCount > 0 ? 'var(--primary)' : 'var(--text-2)',
+          cursor: 'pointer',
+          position: 'relative'
+        }}
+      >
+        <Bell size={20} fill={unreadCount > 0 ? 'var(--primary)' : 'transparent'} />
         {unreadCount > 0 && (
-          <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring' }}
-            style={{ position: 'absolute', top: 5, right: 5, width: 16, height: 16, background: 'var(--danger)', borderRadius: '50%', fontSize: '0.6rem', fontWeight: 900, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg)' }}>
-            {unreadCount}
-          </motion.span>
+          <span style={{
+            position: 'absolute', top: -4, right: -4,
+            background: 'var(--primary)', color: 'black',
+            fontSize: '0.65rem', fontWeight: 800,
+            minWidth: 16, height: 16, borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '0 4px', border: '2px solid var(--bg)'
+          }}>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
         )}
       </motion.button>
 
       <AnimatePresence>
-        {open && (
-          <motion.div initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            style={{ position: 'absolute', top: 'calc(100% + 12px)', right: 0, width: 340, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 20, boxShadow: '0 20px 60px rgba(0,0,0,0.5)', zIndex: 500, overflow: 'hidden' }}>
-            {/* Header */}
-            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>Notifications</div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 1 }}>{unreadCount} unread</div>
-              </div>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            style={{
+              position: 'absolute', top: '120%', right: 0,
+              width: 320, maxHeight: 420,
+              background: 'var(--surface-2)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: 20, border: '1px solid var(--border)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+              zIndex: 100, overflow: 'hidden',
+              display: 'flex', flexDirection: 'column'
+            }}
+          >
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>Notifications</span>
               {unreadCount > 0 && (
-                <motion.button whileTap={{ scale: 0.95 }} onClick={markAllRead}
-                  style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <button 
+                  onClick={handleMarkAllRead}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer' }}
+                >
                   Mark all read
-                </motion.button>
+                </button>
               )}
             </div>
 
-            {/* List */}
-            <div style={{ maxHeight: 380, overflowY: 'auto' }}>
-              <AnimatePresence>
-                {notifications.map((n, i) => (
-                  <motion.div key={n.id} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20, height: 0, padding: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                    style={{ padding: '12px 18px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 12, alignItems: 'flex-start', background: n.unread ? 'rgba(245,158,11,0.04)' : 'transparent', position: 'relative' }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: `${n.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <n.icon size={16} color={n.color} />
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {n.title}
-                        {n.unread && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)', flexShrink: 0 }} />}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 2, lineHeight: 1.4 }}>{n.body}</div>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-4)', marginTop: 4 }}>{n.time}</div>
-                    </div>
-                    <motion.button whileTap={{ scale: 0.8 }} onClick={() => dismiss(n.id)}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-4)', flexShrink: 0, padding: 2 }}>
-                      <X size={13} />
-                    </motion.button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              {notifications.length === 0 && (
-                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-3)' }}>
-                  <Bell size={32} style={{ opacity: 0.3, marginBottom: 10 }} />
-                  <div style={{ fontWeight: 600 }}>All caught up!</div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {notifications.length === 0 ? (
+                <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>
+                  <Bell size={32} style={{ opacity: 0.2, marginBottom: 12 }} />
+                  <div style={{ fontSize: '0.85rem' }}>No notifications yet</div>
                 </div>
+              ) : (
+                notifications.map((notif) => (
+                  <div 
+                    key={notif._id}
+                    onClick={() => !notif.read && handleMarkAsRead(notif._id)}
+                    style={{
+                      padding: '16px 20px',
+                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                      background: notif.read ? 'transparent' : 'rgba(245,158,11,0.03)',
+                      cursor: notif.read ? 'default' : 'pointer',
+                      display: 'flex', gap: 12, transition: 'background 0.2s'
+                    }}
+                  >
+                    <div style={{ 
+                      width: 32, height: 32, borderRadius: 8, 
+                      background: 'rgba(255,255,255,0.05)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 
+                    }}>
+                      {getIcon(notif.type)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.82rem', fontWeight: notif.read ? 500 : 700, color: 'var(--text-1)', marginBottom: 2 }}>
+                        {notif.title}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-2)', lineHeight: 1.4, marginBottom: 4 }}>
+                        {notif.message}
+                      </div>
+                      <div style={{ fontSize: '0.65rem', color: 'var(--text-3)' }}>
+                        {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
+                      </div>
+                    </div>
+                    {!notif.read && (
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)', marginTop: 6 }} />
+                    )}
+                  </div>
+                ))
               )}
+            </div>
+            
+            <div style={{ padding: 12, textAlign: 'center', borderTop: '1px solid var(--border)' }}>
+               <button style={{ background: 'none', border: 'none', color: 'var(--text-3)', fontSize: '0.75rem', cursor: 'pointer' }}>
+                 Clear History
+               </button>
             </div>
           </motion.div>
         )}

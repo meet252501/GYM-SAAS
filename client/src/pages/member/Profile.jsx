@@ -4,6 +4,7 @@ import { LogOut, CreditCard, Bell, Shield, Heart, ChevronRight, Save, CheckCircl
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
 import BadgeShowcase from '../../components/ui/BadgeShowcase';
+import CyberMatrix from '../../components/ui/CyberMatrix';
 
 const containerVariants = {
   hidden: { opacity: 0 },

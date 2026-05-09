@@ -103,3 +103,10 @@ export const dietPlanApi = {
   update: (id, data) => client.put(`/diet-plans/${id}`, data),
   delete: (id) => client.delete(`/diet-plans/${id}`),
 };
+
+export const notificationsApi = {
+  getAll: () => client.get('/notifications'),
+  getUnreadCount: () => client.get('/notifications/unread-count'),
+  markAsRead: (id) => client.patch(`/notifications/${id}/read`),
+  markAllRead: () => client.post('/notifications/mark-all-read'),
+};

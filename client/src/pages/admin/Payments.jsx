@@ -9,6 +9,7 @@ import { paymentApi } from '../../api';
 import MemberSelector from '../../components/ui/MemberSelector';
 import Modal from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
+import CyberMatrix from '../../components/ui/CyberMatrix';
 
 export default function Payments() {
   const [search, setSearch] = useState('');
@@ -92,12 +93,14 @@ export default function Payments() {
   }[status] || 'badge-expired');
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      className="page-layout"
-      style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
-    >
+    <div style={{ position: 'relative', minHeight: '100%' }}>
+      <CyberMatrix opacity={0.03} />
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        className="page-layout"
+        style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}
+      >
       <div className="flex justify-between items-end flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold mb-1">Financials</h1>

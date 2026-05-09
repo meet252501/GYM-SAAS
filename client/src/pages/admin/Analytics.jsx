@@ -8,6 +8,7 @@ import {
 import { TrendingUp, Users, DollarSign, Activity, Crown, Star, Zap, X, ChevronRight } from 'lucide-react';
 import { analyticsApi, membersApi } from '../../api';
 import { format } from 'date-fns';
+import CyberMatrix from '../../components/ui/CyberMatrix';
 
 // ─── Helpers ──────────────────────────────────────────────────
 const PLAN_CFG = {
@@ -210,7 +211,10 @@ export default function Analytics() {
   const totalMembersCount = dashboardStats?.members?.total || 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div style={{ position: 'relative', minHeight: '100%' }}>
+      <CyberMatrix opacity={0.03} />
+      
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -414,6 +418,7 @@ export default function Analytics() {
           </>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

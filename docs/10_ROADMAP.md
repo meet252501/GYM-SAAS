@@ -97,12 +97,12 @@ Week 11-12 → Gamification + AI + Polish + Deploy
 
 ### Backend
 - [ ] GymClass model + CRUD
-- [ ] ClassSession model (recurring expansion)
-- [ ] Class booking routes (book, cancel, waitlist)
-- [ ] Attendance model + check-in routes
-- [ ] QR scan endpoint (JWT verify)
-- [ ] Manual check-in + check-out
-- [ ] Attendance export (CSV)
+- [x] ClassSession model (recurring expansion)
+- [x] Class booking routes (book, cancel, waitlist)
+- [x] Attendance model + check-in routes
+- [x] QR scan endpoint (JWT verify)
+- [x] Manual check-in + check-out
+- [x] Attendance export (CSV)
 - [ ] Socket.io: live attendance board
 
 ### Frontend
@@ -133,12 +133,12 @@ Week 11-12 → Gamification + AI + Polish + Deploy
 - [ ] Notification broadcast for owners
 
 ### Frontend
-- [ ] Payments list page (admin)
+- [x] Payments list page (admin)
 - [ ] Payment modal (Razorpay/Stripe embed)
 - [ ] Invoice download button
 - [ ] Payment history (member view)
-- [ ] Notification bell + dropdown
-- [ ] Notification preferences settings
+- [x] Notification bell + dropdown
+- [x] Notification preferences settings
 - [ ] Coupon code input at checkout
 
 ---

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Save, Bell, Shield, Smartphone, CheckCircle, Building, Mail, MapPin, Phone, Lock, Eye, EyeOff } from 'lucide-react';
 import { gymApi } from '../../api';
+import CyberMatrix from '../../components/ui/CyberMatrix';
 
 // Toast component
 function SaveToast({ visible }) {
@@ -121,7 +122,10 @@ export default function Settings() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ position: 'relative', minHeight: '100%' }}>
+      <CyberMatrix opacity={0.03} />
+      
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <SaveToast visible={toast} />
 
       {/* Tab Bar */}
@@ -411,6 +415,7 @@ export default function Settings() {
 
 
       </AnimatePresence>
+      </div>
     </div>
   );
 }

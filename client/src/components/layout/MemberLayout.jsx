@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Dumbbell, QrCode, Bot, TrendingUp } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import useAuthStore from '../../store/authStore';
+import NotificationBell from '../ui/NotificationBell';
 
 const NAV_ITEMS = [
   { id: 'home',     path: '/member',           icon: Home,        label: 'Home',    exact: true  },
@@ -190,6 +191,8 @@ export default function MemberLayout({ children }) {
             transition={{ repeat: Infinity, duration: 2 }}
             style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 8px var(--success)' }}
           />
+          {/* Notification Bell */}
+          <NotificationBell />
           {/* Avatar → links to Profile */}
           <Link to="/member/profile" style={{ textDecoration: 'none' }}>
             <motion.div
