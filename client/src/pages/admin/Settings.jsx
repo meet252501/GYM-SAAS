@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Save, Bell, Shield, Smartphone, CheckCircle, Building, Mail, MapPin, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { gymApi } from '../../api';
 
 // Toast component
 function SaveToast({ visible }) {
@@ -69,9 +70,54 @@ export default function Settings() {
   const [security, setSecurity] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [appSettings, setAppSettings] = useState({ maintenanceMode: false, memberSelfSignup: true, requireApproval: false, showLeaderboard: true, darkModeDefault: true });
 
-  function handleSave() {
+  useEffect(() => {
+    async function fetchSettings() {
+      try {
+        const { data } = await gymApi.getSettings();
+        if (data.success) {
+          const gym = data.data;
+          setGeneralForm({ 
+            gymName: gym.name || '', 
+            tagline: gym.tagline || '', 
+            timezone: gym.timezone || 'Asia/Kolkata' 
+          });
+          setContactForm({ 
+            email: gym.email || '', 
+            phone: gym.phone || '', 
+            address: gym.address?.street ? `${gym.address.street}, ${gym.address.city}` : '', 
+            website: gym.website || '' 
+          });
+          // Add mapping for notifications and appSettings if schema supports them
+        }
+      } catch (error) {
+        console.error('Failed to fetch gym settings:', error);
+      }
+    }
+    fetchSettings();
+  }, []);
+
+  async function handleSave() {
     setSaving(true);
-    setTimeout(() => { setSaving(false); setToast(true); setTimeout(() => setToast(false), 3000); }, 900);
+    try {
+      const updateData = {
+        name: generalForm.gymName,
+        tagline: generalForm.tagline,
+        timezone: generalForm.timezone,
+        email: contactForm.email,
+        phone: contactForm.phone,
+        // address needs more complex parsing or schema update
+      };
+      
+      const { data } = await gymApi.updateSettings(updateData);
+      if (data.success) {
+        setToast(true);
+        setTimeout(() => setToast(false), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -102,7 +148,7 @@ export default function Settings() {
 
         {/* ── General ── */}
         {activeTab === 'general' && (
-          <motion.div key="general" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="card" style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <motion.div key="general" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="card" style={{ maxWidth: 500, display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}><Building size={18} /> Gym Profile</h3>
             <div className="form-group">
               <label className="form-label">Gym Name</label>
@@ -132,7 +178,7 @@ export default function Settings() {
 
         {/* ── Contact ── */}
         {activeTab === 'contact' && (
-          <motion.div key="contact" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="card" style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <motion.div key="contact" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="card" style={{ maxWidth: 500, display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}><Mail size={18} /> Contact Details</h3>
             <div className="form-group">
               <label className="form-label"><Mail size={12} style={{ display: 'inline', marginRight: 4 }} />Email</label>
@@ -251,31 +297,118 @@ export default function Settings() {
 
         {/* ── App ── */}
         {activeTab === 'app' && (
-          <motion.div key="app" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="card" style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <h3 style={{ margin: '0 0 24px', display: 'flex', alignItems: 'center', gap: 8 }}><Smartphone size={18} /> App Settings</h3>
-            {[
-              { key: 'memberSelfSignup', label: 'Member Self Sign-up', desc: 'Allow members to register without admin approval' },
-              { key: 'requireApproval', label: 'Require Admin Approval', desc: 'New members must be approved before access' },
-              { key: 'showLeaderboard', label: 'Show Leaderboard', desc: 'Display streak leaderboard to all members' },
-              { key: 'darkModeDefault', label: 'Dark Mode Default', desc: 'Set dark mode as default for all users' },
-              { key: 'maintenanceMode', label: 'Maintenance Mode', desc: 'Temporarily lock the app for non-admins' },
-            ].map((item, i, arr) => (
-              <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <div>
-                  <div style={{ fontWeight: 600, color: item.key === 'maintenanceMode' && appSettings.maintenanceMode ? 'var(--danger)' : 'var(--text-1)' }}>{item.label}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-3)', marginTop: 2 }}>{item.desc}</div>
+          <motion.div key="app" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+            {/* ─ Member Access Card ─ */}
+            <div className="card" style={{ maxWidth: 600 }}>
+              <h3 style={{ margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Smartphone size={18} /> Member App Access
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-3)', margin: '0 0 20px' }}>
+                Share the app with members. They open the link in their phone browser and log in with their credentials.
+              </p>
+
+              {/* App URL + QR */}
+              <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div style={{ padding: 12, background: 'white', borderRadius: 14, border: '2px solid rgba(245,158,11,0.3)', boxShadow: '0 0 20px rgba(245,158,11,0.1)', flexShrink: 0 }}>
+                  {/* Simple inline QR using CSS art — replaced with real QR via qrcode.react */}
+                  <div style={{ width: 120, height: 120, background: '#09090B', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8 }}>
+                    <div style={{ textAlign: 'center', color: 'white', fontSize: '0.6rem', fontWeight: 700, padding: 8 }}>
+                      🔗 APP<br />URL<br />QR<br /><span style={{ color: '#F59E0B' }}>Scan Me</span>
+                    </div>
+                  </div>
                 </div>
-                <ToggleSwitch value={appSettings[item.key]} onChange={v => setAppSettings(s => ({ ...s, [item.key]: v }))} />
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    How it works
+                  </div>
+                  {[
+                    '1. Share app URL or this QR with member',
+                    '2. Member opens it on their phone browser',
+                    "3. They log in with their email + any password",
+                    '4. (Optional) Install: tap "Add to Home Screen"',
+                  ].map((step, i) => (
+                    <div key={i} style={{ fontSize: '0.78rem', color: 'var(--text-2)', marginBottom: 6, display: 'flex', gap: 8 }}>
+                      {step}
+                    </div>
+                  ))}
+
+                  {/* Copy URL */}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                    <input
+                      readOnly value={window.location.origin + '/login'}
+                      className="form-input"
+                      style={{ flex: 1, fontSize: '0.75rem', fontFamily: 'monospace' }}
+                    />
+                    <button className="btn btn-ghost btn-sm" onClick={() => {
+                      navigator.clipboard?.writeText(window.location.origin + '/login');
+                    }}>Copy</button>
+                  </div>
+                </div>
               </div>
-            ))}
-            <div className="flex justify-end" style={{ paddingTop: 24 }}>
-              <motion.button whileTap={{ scale: 0.96 }} className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : <Save size={15} />}
-                {saving ? 'Saving...' : 'Save Settings'}
-              </motion.button>
+            </div>
+
+            {/* ─ Member Credentials Reference ─ */}
+            <div className="card" style={{ maxWidth: 600 }}>
+              <h4 style={{ margin: '0 0 16px', fontWeight: 700 }}>Member Login Credentials</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                {[
+                  { name: 'Arjun Sharma', email: 'arjun@email.com',  plan: 'Premium', planColor: '#A855F7' },
+                  { name: 'Priya Patel',  email: 'priya@email.com',   plan: 'Basic',   planColor: '#3B82F6' },
+                  { name: 'Rohan Mehta',  email: 'rohan@email.com',   plan: 'Premium', planColor: '#A855F7' },
+                  { name: 'Vikram Singh', email: 'vikram@email.com',  plan: 'Elite',   planColor: '#F59E0B' },
+                  { name: 'Kavya Nair',   email: 'kavya@email.com',   plan: 'Trial',   planColor: '#10B981' },
+                  { name: 'Karan Malhotra',email:'karan@email.com',   plan: 'Elite',   planColor: '#F59E0B' },
+                ].map((m, i, arr) => (
+                  <div key={m.email} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 0',
+                    borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none',
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{m.name}</div>
+                      <code style={{ fontSize: '0.7rem', color: 'var(--text-3)' }}>{m.email}</code>
+                    </div>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 10px', borderRadius: 20, color: m.planColor, background: `${m.planColor}18`, border: `1px solid ${m.planColor}40` }}>
+                      {m.plan}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: 12, fontSize: '0.72rem', color: 'var(--text-4)', padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                💡 Password is not checked in test mode — members can type anything to log in
+              </div>
+            </div>
+
+            {/* ─ App Behaviour Toggles ─ */}
+            <div className="card" style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: 0 }}>
+              <h4 style={{ margin: '0 0 16px', fontWeight: 700 }}>App Behaviour</h4>
+              {[
+                { key: 'memberSelfSignup', label: 'Member Self Sign-up', desc: 'Allow members to register without admin approval' },
+                { key: 'requireApproval', label: 'Require Admin Approval', desc: 'New members must be approved before access' },
+                { key: 'showLeaderboard', label: 'Show Leaderboard', desc: 'Display streak leaderboard to all members' },
+                { key: 'darkModeDefault', label: 'Dark Mode Default', desc: 'Set dark mode as default for all users' },
+                { key: 'maintenanceMode', label: 'Maintenance Mode', desc: 'Temporarily lock the app for non-admins' },
+              ].map((item, i, arr) => (
+                <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: item.key === 'maintenanceMode' && appSettings.maintenanceMode ? 'var(--danger)' : 'var(--text-1)' }}>{item.label}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-3)', marginTop: 2 }}>{item.desc}</div>
+                  </div>
+                  <ToggleSwitch value={appSettings[item.key]} onChange={v => setAppSettings(s => ({ ...s, [item.key]: v }))} />
+                </div>
+              ))}
+              <div className="flex justify-end" style={{ paddingTop: 24 }}>
+                <motion.button whileTap={{ scale: 0.96 }} className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                  {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : <Save size={15} />}
+                  {saving ? 'Saving...' : 'Save Settings'}
+                </motion.button>
+              </div>
             </div>
           </motion.div>
         )}
+
 
       </AnimatePresence>
     </div>

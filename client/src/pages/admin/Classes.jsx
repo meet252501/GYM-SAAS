@@ -1,13 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Users, Plus, MoreHorizontal, X, Edit, Trash2, Eye } from 'lucide-react';
-
-const INITIAL_CLASSES = [
-  { id: 1, name: 'HIIT Extreme', instructor: 'Mike Tyson', time: '08:00 AM', duration: '45m', capacity: 20, booked: 18, type: 'Cardio' },
-  { id: 2, name: 'Powerlifting Basics', instructor: 'Arnold S.', time: '10:30 AM', duration: '60m', capacity: 15, booked: 15, type: 'Strength' },
-  { id: 3, name: 'Yoga Flow', instructor: 'Elena R.', time: '05:00 PM', duration: '60m', capacity: 25, booked: 12, type: 'Flexibility' },
-  { id: 4, name: 'CrossFit WOD', instructor: 'Rich Froning', time: '06:30 PM', duration: '60m', capacity: 20, booked: 19, type: 'Mixed' },
-];
+import { classesApi } from '../../api';
+import toast from 'react-hot-toast';
 
 const CLASS_TYPES = ['Cardio', 'Strength', 'Flexibility', 'Mixed', 'Yoga', 'Boxing', 'Cycling'];
 
@@ -144,23 +139,80 @@ function ClassMenu({ cls, onClose, onEdit, onDelete, onView }) {
 }
 
 export default function Classes() {
-  const [classes, setClasses] = useState(INITIAL_CLASSES);
+  const [classes, setClasses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
   const [viewingClass, setViewingClass] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  function handleAdd(form) {
-    setClasses(prev => [...prev, { ...form, id: Date.now(), booked: 0 }]);
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  async function fetchClasses() {
+    setIsLoading(true);
+    try {
+      const res = await classesApi.getAll();
+      setClasses(res.data.map(c => ({
+        id: c._id,
+        name: c.name,
+        instructor: c.instructor,
+        time: c.schedule?.[0]?.startTime || 'N/A',
+        duration: c.duration ? `${c.duration}m` : '60m',
+        capacity: c.capacity,
+        booked: c.currentOccupancy || 0,
+        type: c.category || 'Mixed'
+      })));
+    } catch {
+      toast.error('Failed to load classes');
+    } finally {
+      setIsLoading(false);
+    }
   }
 
-  function handleEdit(form) {
-    setClasses(prev => prev.map(c => c.id === editingClass.id ? { ...c, ...form } : c));
-    setEditingClass(null);
+  async function handleAdd(form) {
+    try {
+      await classesApi.create({
+        name: form.name,
+        instructor: form.instructor,
+        category: form.type,
+        capacity: form.capacity,
+        duration: parseInt(form.duration)
+      });
+      toast.success('Class added');
+      fetchClasses();
+    } catch {
+      toast.error('Failed to add class');
+    }
   }
 
-  function handleDelete(id) {
-    setClasses(prev => prev.filter(c => c.id !== id));
+  async function handleEdit(form) {
+    try {
+      await classesApi.update(editingClass.id, {
+        name: form.name,
+        instructor: form.instructor,
+        category: form.type,
+        capacity: form.capacity,
+        duration: parseInt(form.duration)
+      });
+      toast.success('Class updated');
+      setEditingClass(null);
+      fetchClasses();
+    } catch {
+      toast.error('Failed to update class');
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm('Are you sure you want to delete this class? This cannot be undone.')) return;
+    try {
+      await classesApi.delete(id);
+      toast.success('Class deleted');
+      fetchClasses();
+    } catch {
+      toast.error('Failed to delete class');
+    }
   }
 
   const typeColor = type => ({
@@ -192,7 +244,15 @@ export default function Classes() {
       </div>
 
       <div className="grid-3">
-        {classes.map((c, i) => {
+        {isLoading ? (
+          [1, 2, 3].map(i => (
+            <div key={i} className="card skeleton-card" style={{ height: 200, opacity: 0.5 }}>
+              <div className="skeleton" style={{ width: '40%', height: 20, borderRadius: 10, marginBottom: 12 }} />
+              <div className="skeleton" style={{ width: '80%', height: 24, borderRadius: 4, marginBottom: 8 }} />
+              <div className="skeleton" style={{ width: '60%', height: 16, borderRadius: 4 }} />
+            </div>
+          ))
+        ) : classes.map((c, i) => {
           const isFull = c.booked >= c.capacity;
           const fillPct = Math.min((c.booked / c.capacity) * 100, 100);
           const tc = typeColor(c.type);

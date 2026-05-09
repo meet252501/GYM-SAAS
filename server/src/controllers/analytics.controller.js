@@ -111,4 +111,38 @@ const getAttendanceChart = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-module.exports = { getDashboard, getRevenueChart, getAttendanceChart };
+// @route   GET /api/v1/analytics/member/:id
+const getMemberAnalytics = async (req, res, next) => {
+  try {
+    const memberId = req.params.id;
+    const now = new Date();
+    const startOfFourWeeksAgo = new Date(now);
+    startOfFourWeeksAgo.setDate(now.getDate() - 28);
+
+    const [attendance, workouts, metrics] = await Promise.all([
+      Attendance.find({ memberId, checkedInAt: { $gte: startOfFourWeeksAgo } }).sort({ checkedInAt: 1 }),
+      WorkoutLog.find({ memberId, date: { $gte: startOfFourWeeksAgo } }).sort({ date: 1 }),
+      Member.findById(memberId).select('currentMetrics')
+    ]);
+
+    // Format for chart: grouped by week
+    const weeklyData = [];
+    for (let i = 0; i < 4; i++) {
+      const start = new Date(startOfFourWeeksAgo);
+      start.setDate(start.getDate() + i * 7);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 7);
+
+      const count = workouts.filter(w => w.date >= start && w.date < end).length;
+      weeklyData.push({ week: `W${i + 1}`, workouts: count });
+    }
+
+    return successResponse(res, {
+      weeklyWorkouts: weeklyData,
+      totalAttendance: attendance.length,
+      recentMetrics: metrics?.currentMetrics || {}
+    });
+  } catch (error) { next(error); }
+};
+
+module.exports = { getDashboard, getRevenueChart, getAttendanceChart, getMemberAnalytics };

@@ -1,22 +1,25 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Dumbbell, QrCode, CreditCard,
-  BarChart3, Trophy, Settings, ChevronLeft, Bell,
-  LogOut
+  BarChart3, Trophy, Settings, ChevronLeft, LogOut, Smartphone, Utensils
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
+import AdminAI from '../ai/AdminAI';
+import NotificationBell from '../ui/NotificationBell';
 
 const NAV = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { path: '/admin/members', icon: Users, label: 'Members' },
   { path: '/admin/classes', icon: Dumbbell, label: 'Classes' },
+  { path: '/admin/diet-plans', icon: Utensils, label: 'Diet Plans' },
   { path: '/admin/attendance', icon: QrCode, label: 'Attendance' },
   { path: '/admin/payments', icon: CreditCard, label: 'Payments' },
   { path: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   { path: '/admin/leaderboard', icon: Trophy, label: 'Leaderboard' },
   { path: '/admin/settings', icon: Settings, label: 'Settings' },
+  { path: '/admin/app-settings', icon: Smartphone, label: 'Mobile App' },
 ];
 
 function NavItem({ item, collapsed }) {
@@ -69,6 +72,7 @@ function NavItem({ item, collapsed }) {
 export default function AdminLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const { pathname } = useLocation();
   const pageTitle = NAV.find(n => n.exact ? pathname === n.path : pathname.startsWith(n.path))?.label || 'GymFlow Pro';
 
@@ -148,11 +152,8 @@ export default function AdminLayout({ children }) {
             <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>{pageTitle}</h2>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button className="btn btn-ghost btn-icon btn-sm" style={{ position: 'relative' }}>
-              <Bell size={17} />
-              <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, background: 'var(--danger)', borderRadius: '50%', border: '1.5px solid var(--bg)' }} />
-            </button>
-            <button className="btn btn-ghost btn-sm" onClick={logout} style={{ gap: 6, color: 'var(--text-3)' }}>
+            <NotificationBell />
+            <button className="btn btn-ghost btn-sm" onClick={async () => { await logout(); navigate('/login'); }} style={{ gap: 6, color: 'var(--text-3)' }}>
               <LogOut size={15} />
               <span style={{ fontSize: '0.8rem' }}>Logout</span>
             </button>
@@ -171,6 +172,9 @@ export default function AdminLayout({ children }) {
           </motion.div>
         </main>
       </motion.div>
+
+      {/* Floating Admin AI */}
+      <AdminAI />
     </div>
   );
 }

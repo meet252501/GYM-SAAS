@@ -28,15 +28,16 @@ export const mockPlans = [
   { _id: 'p4', name: 'Elite', price: 2999, duration: 30, color: '#8B5CF6', features: ['All Premium', 'Unlimited PT', 'Nutrition plan', 'Body composition', 'Priority booking', '2 guest passes/month'] },
 ];
 
+// FIX: Expanded to 90 days so the 90D analytics range shows real data
 export const generateAttendanceSeries = () =>
-  Array.from({ length: 30 }, (_, i) => ({
-    date: format(subDays(now, 29 - i), 'MMM d'),
+  Array.from({ length: 90 }, (_, i) => ({
+    date: format(subDays(now, 89 - i), 'MMM d'),
     count: Math.floor(Math.random() * 20) + 8,
   }));
 
 export const generateRevenueSeries = () =>
-  Array.from({ length: 30 }, (_, i) => ({
-    date: format(subDays(now, 29 - i), 'MMM d'),
+  Array.from({ length: 90 }, (_, i) => ({
+    date: format(subDays(now, 89 - i), 'MMM d'),
     revenue: Math.floor(Math.random() * 12000) + 7000,
     members: Math.floor(Math.random() * 8) + 4,
   }));

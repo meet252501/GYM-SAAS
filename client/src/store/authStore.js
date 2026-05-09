@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { authApi } from '../api';
+import { mockMembers } from '../data/mockData';
 
 const useAuthStore = create((set) => ({
   user: null,
@@ -10,12 +11,27 @@ const useAuthStore = create((set) => ({
   initialize: async () => {
     const token = localStorage.getItem('accessToken');
     if (!token) { set({ isLoading: false }); return; }
-    
-    if (token === 'mock-token' || token === 'mock-member-token') {
-      const isMember = token === 'mock-member-token';
-      const mockUser = { _id: isMember ? 'member1' : 'admin1', name: isMember ? 'Demo Member' : 'Demo Admin', email: isMember ? 'member@gym.com' : 'admin@gym.com', role: isMember ? 'member' : 'owner' };
-      const mockGym = { _id: 'gym1', name: 'GymFlow Demo HQ' };
-      set({ user: mockUser, gym: mockGym, isAuthenticated: true, isLoading: false });
+
+    if (token === 'mock-token') {
+      const mockAdmin = { _id: 'admin1', firstName: 'Admin', lastName: 'Owner', email: 'admin@gym.com', role: 'owner' };
+      const mockGym = { _id: 'gym1', name: 'GymFlow Pro' };
+      set({ user: mockAdmin, gym: mockGym, isAuthenticated: true, isLoading: false });
+      return;
+    }
+    if (token === 'mock-member-token') {
+      // Reload the specific member that was saved at login time
+      try {
+        const savedUser = JSON.parse(localStorage.getItem('mock_member_user') || '{}');
+        const mockGym = { _id: 'gym1', name: 'GymFlow Pro' };
+        if (savedUser._id) {
+          set({ user: savedUser, gym: mockGym, isAuthenticated: true, isLoading: false });
+          return;
+        }
+      } catch { /* ignore */ }
+      // Fallback generic member
+      const fallback = { _id: 'member1', memberId: 'GF-2026-DEMO', firstName: 'Demo', lastName: 'Member', email: 'member@gym.com', role: 'member', membershipPlan: 'Premium', streak: 14, totalWorkouts: 56, goal: 'Muscle Gain', weight: 75, height: 175 };
+      const mockGym = { _id: 'gym1', name: 'GymFlow Pro' };
+      set({ user: fallback, gym: mockGym, isAuthenticated: true, isLoading: false });
       return;
     }
 
@@ -39,10 +55,29 @@ const useAuthStore = create((set) => ({
       return user;
     } catch (err) {
       if (err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK' || !err.response) {
-        console.warn("Backend offline. Using mock login.");
-        const isMember = email.includes('member');
-        const mockUser = { _id: isMember ? 'member1' : 'admin1', name: isMember ? 'Demo Member' : 'Demo Admin', email, role: isMember ? 'member' : 'owner' };
-        const mockGym = { _id: 'gym1', name: 'GymFlow Demo HQ' };
+        console.warn('Backend offline — using mock login.');
+
+        const MEMBER_EMAILS = mockMembers.map(m => m.email.toLowerCase());
+        const emailLower = email.toLowerCase().trim();
+        const isMember = MEMBER_EMAILS.includes(emailLower) || emailLower.includes('member');
+
+        let mockUser;
+        if (isMember) {
+          // Find the specific member from mock data
+          const found = mockMembers.find(m => m.email.toLowerCase() === emailLower);
+          if (found) {
+            mockUser = { ...found, role: 'member' };
+          } else {
+            // Generic fallback member
+            mockUser = { _id: 'member1', memberId: 'GF-2026-DEMO', firstName: 'Demo', lastName: 'Member', email, role: 'member', membershipPlan: 'Premium', streak: 14, totalWorkouts: 56, goal: 'Muscle Gain', weight: 75, height: 175 };
+          }
+          // Persist member identity so initialize() can reload it
+          localStorage.setItem('mock_member_user', JSON.stringify(mockUser));
+        } else {
+          mockUser = { _id: 'admin1', firstName: 'Admin', lastName: 'Owner', email, role: 'owner' };
+        }
+
+        const mockGym = { _id: 'gym1', name: 'GymFlow Pro' };
         localStorage.setItem('accessToken', isMember ? 'mock-member-token' : 'mock-token');
         set({ user: mockUser, gym: mockGym, isAuthenticated: true });
         return mockUser;
@@ -64,6 +99,7 @@ const useAuthStore = create((set) => ({
     try { await authApi.logout(); } catch (e) { console.error('Logout error:', e); }
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('mock_member_user');
     set({ user: null, gym: null, isAuthenticated: false });
   },
 

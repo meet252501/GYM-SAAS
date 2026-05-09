@@ -6,6 +6,11 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();
+  
+  // Initialize cron jobs for membership expiry alerting & status updates
+  const { initCronJobs } = require('./src/jobs/cron');
+  initCronJobs();
+
   app.listen(PORT, () => {
     console.log(`🚀 GymFlow Pro API running on port ${PORT}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV}`);

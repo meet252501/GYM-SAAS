@@ -101,14 +101,6 @@ export default function Login() {
         <div className="auth-footer">
           New gym? <Link to="/register" className="auth-link">Create account</Link>
         </div>
-
-        {/* Demo hint */}
-        <div className="auth-demo-hint">
-          <span>Demo credentials</span>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setForm({ email: 'demo@gym.com', password: 'demo1234' })}>
-            Fill Demo
-          </button>
-        </div>
       </motion.div>
 
       <style>{`

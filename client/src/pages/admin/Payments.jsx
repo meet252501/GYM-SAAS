@@ -1,177 +1,281 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CreditCard, DollarSign, ArrowUpRight, ArrowDownRight, Download, Search, CheckCircle, X } from 'lucide-react';
-
-const MOCK_TRANSACTIONS = [
-  { id: 'INV-001', member: 'Alex Johnson', date: '2025-05-06', amount: 120, status: 'Completed', plan: 'Premium Plan' },
-  { id: 'INV-002', member: 'Sarah Chen', date: '2025-05-05', amount: 80, status: 'Completed', plan: 'Basic Plan' },
-  { id: 'INV-003', member: 'Mike Ross', date: '2025-05-04', amount: 150, status: 'Pending', plan: 'Elite Plan' },
-  { id: 'INV-004', member: 'Emma Davis', date: '2025-05-03', amount: 120, status: 'Completed', plan: 'Premium Plan' },
-  { id: 'INV-005', member: 'James Wilson', date: '2025-05-01', amount: 80, status: 'Failed', plan: 'Basic Plan' },
-  { id: 'INV-006', member: 'Priya Patel', date: '2025-04-30', amount: 150, status: 'Completed', plan: 'Elite Plan' },
-  { id: 'INV-007', member: 'Carlos Ruiz', date: '2025-04-28', amount: 80, status: 'Completed', plan: 'Basic Plan' },
-];
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  DollarSign, ArrowDownRight, 
+  Download, Search, Plus, 
+  Receipt, FileText
+} from 'lucide-react';
+import { paymentApi } from '../../api';
+import MemberSelector from '../../components/ui/MemberSelector';
+import Modal from '../../components/ui/Modal';
+import toast from 'react-hot-toast';
 
 export default function Payments() {
   const [search, setSearch] = useState('');
-  const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  
+  const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState({ revenue: 0, successful: 0, failed: 0 });
 
-  const filtered = MOCK_TRANSACTIONS.filter(tx =>
-    tx.member.toLowerCase().includes(search.toLowerCase()) ||
-    tx.id.toLowerCase().includes(search.toLowerCase()) ||
-    tx.plan.toLowerCase().includes(search.toLowerCase())
+  const [recordForm, setRecordForm] = useState({ 
+    memberId: '', 
+    type: 'membership', 
+    amount: '', 
+    paidAt: new Date().toISOString().split('T')[0], 
+    notes: '' 
+  });
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [txRes, statsRes] = await Promise.all([
+        paymentApi.getAll({ limit: 50 }),
+        paymentApi.getStats(30)
+      ]);
+
+      setTransactions(txRes.data.data || []);
+      
+      const statsData = statsRes.data.data || [];
+      const totalRev = statsData.reduce((sum, s) => sum + s.revenue, 0);
+      const totalCount = statsData.reduce((sum, s) => sum + s.count, 0);
+      
+      setStats({
+        revenue: totalRev,
+        successful: totalCount,
+        failed: 0 
+      });
+    } catch (err) {
+      console.error('Error fetching payments:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Calling fetchData() in a setTimeout to avoid cascading render warning in some strict lint environments
+    const timer = setTimeout(fetchData, 0);
+    return () => clearTimeout(timer);
+  }, [fetchData]);
+
+  const filtered = transactions.filter(tx =>
+    tx.memberName?.toLowerCase().includes(search.toLowerCase()) ||
+    tx._id?.toLowerCase().includes(search.toLowerCase()) ||
+    tx.type?.toLowerCase().includes(search.toLowerCase())
   );
 
-  function handleDownload(tx) {
-    setToast(`Downloaded ${tx.id}.pdf`);
-    setTimeout(() => setToast(null), 2500);
-  }
+  const handleRecordPayment = async (e) => {
+    e.preventDefault();
+    if (!recordForm.memberId) return toast.error("Please select a member");
+    
+    try {
+      await paymentApi.record({
+        ...recordForm,
+        amount: parseFloat(recordForm.amount),
+        gateway: 'cash'
+      });
+      
+      setIsRecordModalOpen(false);
+      setRecordForm({ memberId: '', type: 'membership', amount: '', paidAt: new Date().toISOString().split('T')[0], notes: '' });
+      toast.success(`Recorded ₹${recordForm.amount} payment`);
+      fetchData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to record payment');
+    }
+  };
 
   const statusStyle = status => ({
-    Completed: 'badge-active',
-    Pending: 'badge-trial',
-    Failed: 'badge-expired',
+    completed: 'badge-active',
+    pending: 'badge-trial',
+    failed: 'badge-expired',
+    refunded: 'badge-expired',
   }[status] || 'badge-expired');
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            style={{
-              position: 'fixed', top: 80, right: 24, zIndex: 200,
-              background: 'var(--success)', color: 'white', padding: '10px 18px',
-              borderRadius: 16, fontWeight: 700, fontSize: '0.9rem',
-              display: 'flex', alignItems: 'center', gap: 8,
-              boxShadow: '0 8px 24px rgba(16,185,129,0.4)'
-            }}
-          >
-            <CheckCircle size={16} /> {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Stats Row */}
-      <div className="grid-3">
-        <motion.div className="stat-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="stat-icon stat-icon-green"><DollarSign size={24} className="text-success" /></div>
-          <div>
-            <div className="stat-value">$12,450</div>
-            <div className="stat-label">Total Revenue (MTD)</div>
-            <div className="stat-change up"><ArrowUpRight size={14} /> +8.4%</div>
-          </div>
-        </motion.div>
-
-        <motion.div className="stat-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div className="stat-icon stat-icon-amber"><CreditCard size={24} className="text-primary" /></div>
-          <div>
-            <div className="stat-value">145</div>
-            <div className="stat-label">Successful Payments</div>
-            <div className="stat-change up"><ArrowUpRight size={14} /> +12 this week</div>
-          </div>
-        </motion.div>
-
-        <motion.div className="stat-card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="stat-icon stat-icon-red"><ArrowDownRight size={24} className="text-danger" /></div>
-          <div>
-            <div className="stat-value">3</div>
-            <div className="stat-label">Failed Transactions</div>
-            <div className="stat-change down">Action Required</div>
-          </div>
-        </motion.div>
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="page-layout"
+      style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
+    >
+      <div className="flex justify-between items-end flex-wrap gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-1">Financials</h1>
+          <p className="text-faint">Track revenue, invoices, and payment history</p>
+        </div>
+        <div className="flex gap-3">
+          <button className="btn btn-secondary" onClick={() => toast.success("Exporting...")}>
+            <Download size={18} /> Export
+          </button>
+          <button className="btn btn-primary" onClick={() => setIsRecordModalOpen(true)}>
+            <Plus size={18} /> Record Payment
+          </button>
+        </div>
       </div>
 
-      {/* Table Card */}
-      <motion.div className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <div className="flex justify-between items-center" style={{ padding: '4px 0 20px', gap: 12, flexWrap: 'wrap' }}>
-          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
-            Recent Transactions
-            <span style={{ marginLeft: 8, fontSize: '0.8rem', color: 'var(--text-3)', fontWeight: 400 }}>
-              ({filtered.length} result{filtered.length !== 1 ? 's' : ''})
-            </span>
-          </h3>
-          <div className="input-wrapper" style={{ width: 260 }}>
+      <div className="grid-3">
+        <div className="stat-card">
+          <div className="stat-icon stat-icon-green"><DollarSign size={24} /></div>
+          <div>
+            <div className="stat-value">₹{loading ? '...' : stats.revenue.toLocaleString('en-IN')}</div>
+            <div className="stat-label">30-Day Revenue</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon stat-icon-blue"><Receipt size={24} /></div>
+          <div>
+            <div className="stat-value">{loading ? '...' : stats.successful}</div>
+            <div className="stat-label">Total Transactions</div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon stat-icon-red"><ArrowDownRight size={24} /></div>
+          <div>
+            <div className="stat-value">{stats.failed}</div>
+            <div className="stat-label">Pending / Failed</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="flex justify-between items-center mb-6">
+          <div className="input-wrapper" style={{ width: 320 }}>
             <Search className="input-icon" size={16} />
             <input
               type="text"
               className="form-input"
-              placeholder="Search invoice, name..."
+              placeholder="Filter by member or invoice ID..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer' }}
-              >
-                <X size={14} />
-              </button>
-            )}
           </div>
         </div>
 
-        <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
+        <div className="table-responsive">
           <table className="table">
             <thead>
               <tr>
-                <th>Invoice</th>
+                <th>Invoice ID</th>
                 <th>Member</th>
-                <th>Plan</th>
+                <th>Category</th>
                 <th>Date</th>
                 <th>Amount</th>
                 <th>Status</th>
-                <th style={{ width: 80 }}>Action</th>
+                <th style={{ width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(tx => (
-                <motion.tr
-                  key={tx.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  layout
-                >
-                  <td style={{ fontWeight: 600, color: 'var(--text-2)' }}>{tx.id}</td>
-                  <td style={{ fontWeight: 600 }}>{tx.member}</td>
-                  <td className="text-muted">{tx.plan}</td>
-                  <td className="text-muted">{tx.date}</td>
-                  <td style={{ fontWeight: 700 }}>${tx.amount}</td>
-                  <td>
-                    <span className={`badge ${statusStyle(tx.status)}`}>{tx.status}</span>
-                  </td>
-                  <td>
-                    <motion.button
-                      whileTap={{ scale: 0.9 }}
-                      className="btn btn-ghost btn-icon btn-sm"
-                      title="Download Invoice"
-                      onClick={() => handleDownload(tx)}
-                    >
-                      <Download size={16} />
-                    </motion.button>
-                  </td>
-                </motion.tr>
-              ))}
-              {filtered.length === 0 && (
+              {loading ? (
+                Array(5).fill(0).map((_, i) => (
+                  <tr key={i}>
+                    <td><div className="skeleton" style={{ height: 14, width: 80 }} /></td>
+                    <td><div className="skeleton" style={{ height: 20, width: 150 }} /></td>
+                    <td><div className="skeleton" style={{ height: 24, width: 80, borderRadius: 12 }} /></td>
+                    <td><div className="skeleton" style={{ height: 14, width: 100 }} /></td>
+                    <td><div className="skeleton" style={{ height: 16, width: 60 }} /></td>
+                    <td><div className="skeleton" style={{ height: 24, width: 80, borderRadius: 12 }} /></td>
+                    <td><div className="skeleton" style={{ height: 32, width: 32, borderRadius: 8 }} /></td>
+                  </tr>
+                ))
+              ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7}>
-                    <div className="empty-state" style={{ padding: '32px 0' }}>
-                      <Search className="empty-icon" />
-                      <div className="empty-title">No results found</div>
-                      <div className="empty-desc">Try a different search term.</div>
-                    </div>
+                  <td colSpan={7} style={{ padding: '80px 0', textAlign: 'center' }}>
+                    <Receipt size={48} className="text-faint mb-4" style={{ margin: '0 auto 16px', opacity: 0.2 }} />
+                    <h3 style={{ color: 'var(--text-2)' }}>No transactions found</h3>
+                    <p className="text-faint">Try adjusting your search or record a new payment.</p>
                   </td>
                 </tr>
+              ) : (
+                filtered.map(tx => (
+                  <tr key={tx._id} className="hoverable-row">
+                    <td style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-3)' }}>
+                      #{tx._id.slice(-8).toUpperCase()}
+                    </td>
+                    <td style={{ fontWeight: 600 }}>{tx.memberName}</td>
+                    <td>
+                      <span className="badge badge-common" style={{ textTransform: 'capitalize' }}>
+                        {tx.type}
+                      </span>
+                    </td>
+                    <td className="text-muted text-sm">{new Date(tx.createdAt).toLocaleDateString()}</td>
+                    <td style={{ fontWeight: 700 }}>₹{tx.amount.toLocaleString('en-IN')}</td>
+                    <td>
+                      <span className={`badge ${statusStyle(tx.status)}`}>{tx.status}</span>
+                    </td>
+                    <td>
+                      <button className="btn-icon text-faint" onClick={() => toast.success("Invoice view coming soon")}>
+                        <FileText size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
-      </motion.div>
+      </div>
 
-    </div>
+      <Modal isOpen={isRecordModalOpen} onClose={() => setIsRecordModalOpen(false)} title="Record Payment">
+        <form onSubmit={handleRecordPayment} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <MemberSelector 
+            selectedId={recordForm.memberId}
+            onSelect={id => setRecordForm({...recordForm, memberId: id})}
+          />
+
+          <div className="grid-2">
+            <div className="form-group">
+              <label className="form-label">Category</label>
+              <select 
+                className="form-select" 
+                value={recordForm.type}
+                onChange={e => setRecordForm({...recordForm, type: e.target.value})}
+              >
+                <option value="membership">Membership Renewal</option>
+                <option value="class">Class Fee</option>
+                <option value="product">Supplement / Product</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Amount (₹)</label>
+              <input 
+                type="number" 
+                className="form-input" 
+                required 
+                placeholder="0.00"
+                value={recordForm.amount}
+                onChange={e => setRecordForm({...recordForm, amount: e.target.value})}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Date</label>
+            <input 
+              type="date" 
+              className="form-input" 
+              value={recordForm.paidAt}
+              onChange={e => setRecordForm({...recordForm, paidAt: e.target.value})}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label className="form-label">Notes (Optional)</label>
+            <textarea 
+              className="form-input" 
+              rows={2}
+              placeholder="Add any additional details..."
+              value={recordForm.notes}
+              onChange={e => setRecordForm({...recordForm, notes: e.target.value})}
+            />
+          </div>
+
+          <div className="modal-actions" style={{ marginTop: 8 }}>
+            <button type="button" className="btn btn-ghost" onClick={() => setIsRecordModalOpen(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary">Record Payment</button>
+          </div>
+        </form>
+      </Modal>
+    </motion.div>
   );
 }

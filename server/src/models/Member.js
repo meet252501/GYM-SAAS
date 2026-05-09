@@ -35,6 +35,10 @@ const memberSchema = new mongoose.Schema({
     bodyFatPercent: Number,
     updatedAt: Date
   },
+  weightHistory: [{
+    weight: Number,
+    date: { type: Date, default: Date.now }
+  }],
 
   // Member card
   memberId: { type: String, unique: true },

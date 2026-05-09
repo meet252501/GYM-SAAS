@@ -1,14 +1,15 @@
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Dumbbell, Calendar, QrCode, User } from 'lucide-react';
+import { Home, Dumbbell, QrCode, Bot, TrendingUp } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import useAuthStore from '../../store/authStore';
 
 const NAV_ITEMS = [
-  { id: 'home', path: '/member', icon: Home, label: 'Home', exact: true },
-  { id: 'workouts', path: '/member/workouts', icon: Dumbbell, label: 'Train', exact: false },
-  { id: 'qr', path: '/member/pass', icon: QrCode, label: 'Pass', exact: false, special: true },
-  { id: 'classes', path: '/member/classes', icon: Calendar, label: 'Classes', exact: false },
-  { id: 'profile', path: '/member/profile', icon: User, label: 'Profile', exact: false },
+  { id: 'home',     path: '/member',           icon: Home,        label: 'Home',    exact: true  },
+  { id: 'workouts', path: '/member/workouts',   icon: Dumbbell,    label: 'Train',   exact: false },
+  { id: 'qr',       path: '/member/pass',       icon: QrCode,      label: 'Pass',    exact: false, special: true },
+  { id: 'progress', path: '/member/progress',   icon: TrendingUp,  label: 'Growth',  exact: false },
+  { id: 'ai',       path: '/member/ai',         icon: Bot,         label: 'Coach AI',exact: false },
 ];
 
 // ─── Particle Canvas ────────────────────────────────────────
@@ -101,6 +102,7 @@ function ParticleCanvas() {
 
 export default function MemberLayout({ children }) {
   const { pathname } = useLocation();
+  const { user } = useAuthStore();
 
   return (
     <div style={{
@@ -188,18 +190,24 @@ export default function MemberLayout({ children }) {
             transition={{ repeat: Infinity, duration: 2 }}
             style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 8px var(--success)' }}
           />
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            style={{
-              width: 36, height: 36, borderRadius: '50%',
-              background: 'var(--surface-3)',
-              border: '2px solid rgba(245,158,11,0.3)',
-              overflow: 'hidden',
-              boxShadow: '0 0 12px rgba(245,158,11,0.15)'
-            }}
-          >
-            <img src="https://i.pravatar.cc/100?img=11" alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </motion.div>
+          {/* Avatar → links to Profile */}
+          <Link to="/member/profile" style={{ textDecoration: 'none' }}>
+            <motion.div
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--primary), #8b5cf6)',
+                border: '2px solid rgba(245,158,11,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 12px rgba(245,158,11,0.3)',
+                cursor: 'pointer',
+                color: '#000', fontWeight: 900, fontSize: '0.9rem',
+              }}
+            >
+              {(user?.firstName?.[0] || user?.email?.[0] || 'M').toUpperCase()}
+            </motion.div>
+          </Link>
         </div>
       </header>
 
@@ -296,7 +304,7 @@ export default function MemberLayout({ children }) {
                   size={21}
                   style={{ filter: isActive ? 'drop-shadow(0 0 8px rgba(245,158,11,0.6))' : 'none' }}
                 />
-                <span style={{ fontSize: '0.65rem', fontWeight: isActive ? 700 : 500 }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: isActive ? 800 : 500, marginTop: 1 }}>
                   {item.label}
                 </span>
               </motion.div>

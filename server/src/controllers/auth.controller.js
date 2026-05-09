@@ -103,8 +103,20 @@ const login = async (req, res, next) => {
     // Get gym info
     const gym = await Gym.findById(user.gymId);
 
+    // Get member profile if exists
+    const member = await Member.findOne({ userId: user._id });
+    const userData = user.toJSON();
+    
+    if (member) {
+      userData.firstName = member.firstName;
+      userData.lastName = member.lastName;
+      userData.streak = member.streak?.current || 0;
+      userData.totalWorkouts = member.totalWorkouts || 0;
+      userData.memberId = member._id;
+    }
+
     return successResponse(res, {
-      user: user.toJSON(),
+      user: userData,
       gym,
       accessToken,
       refreshToken
@@ -157,7 +169,18 @@ const logout = async (req, res, next) => {
 const getMe = async (req, res, next) => {
   try {
     const gym = await Gym.findById(req.user.gymId);
-    return successResponse(res, { user: req.user, gym });
+    const member = await Member.findOne({ userId: req.user._id });
+    
+    const userData = req.user.toJSON();
+    if (member) {
+      userData.firstName = member.firstName;
+      userData.lastName = member.lastName;
+      userData.streak = member.streak?.current || 0;
+      userData.totalWorkouts = member.totalWorkouts || 0;
+      userData.memberId = member._id;
+    }
+
+    return successResponse(res, { user: userData, gym });
   } catch (error) {
     next(error);
   }

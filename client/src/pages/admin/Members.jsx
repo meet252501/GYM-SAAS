@@ -1,96 +1,177 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { 
+  Search, Plus, Filter, MoreHorizontal, Users, Calendar, 
+  Edit, Trash2, Download, RefreshCw, UserCheck
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Plus, Filter, MoreHorizontal, X, User, Mail, Phone, CreditCard, Calendar, Edit, Trash2 } from 'lucide-react';
-import { MOCK_MEMBERS } from '../../data/mockData';
+import { membersApi, membershipApi } from '../../api';
 import { StatusBadge, PlanBadge, DaysLeftBar } from '../../components/ui/Badges';
 import Avatar from '../../components/ui/Avatar';
+import Modal from '../../components/ui/Modal';
+import toast from 'react-hot-toast';
 
 // ─── Add Member Modal ───────────────────────────────────────
-function AddMemberModal({ onClose, onAdd }) {
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', plan: 'basic', status: 'trial' });
+function AddMemberModal({ isOpen, onClose, onSuccess }) {
+  const [form, setForm] = useState({ 
+    firstName: '', lastName: '', email: '', phone: '', 
+    planId: '', gender: 'male' 
+  });
+  const [plans, setPlans] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [loadingPlans, setLoadingPlans] = useState(false);
 
-  function handleSubmit(e) {
+  useEffect(() => {
+    let mounted = true;
+    if (!isOpen) {
+      const timer = setTimeout(() => {
+        if (mounted) {
+          setForm({ 
+            firstName: '', lastName: '', email: '', phone: '', 
+            planId: '', gender: 'male' 
+          });
+        }
+      }, 0);
+      return () => {
+        mounted = false;
+        clearTimeout(timer);
+      };
+    }
+    
+    const timer2 = setTimeout(() => {
+      if (mounted) {
+        setLoadingPlans(true);
+        membershipApi.getPlans()
+          .then(res => {
+            if (mounted) setPlans(res.data.data || []);
+          })
+          .catch(() => toast.error("Failed to load plans"))
+          .finally(() => {
+            if (mounted) setLoadingPlans(false);
+          });
+      }
+    }, 0);
+      
+    return () => { 
+      mounted = false; 
+      clearTimeout(timer2);
+    };
+  }, [isOpen]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.firstName || !form.email) return;
+    if (!form.firstName || !form.email || !form.planId) {
+      return toast.error("Please fill all required fields");
+    }
+    
     setSaving(true);
-    setTimeout(() => {
-      onAdd(form);
-      setSaving(false);
+    try {
+      await membersApi.create(form);
+      toast.success('Member enrolled successfully');
+      onSuccess();
       onClose();
-    }, 800);
-  }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Enrollment failed');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="modal-overlay"
-      onClick={e => e.target === e.currentTarget && onClose()}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="modal"
-        style={{ maxWidth: 480 }}
-      >
-        <div className="modal-header">
-          <h3 className="modal-title">Add New Member</h3>
-          <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={18} /></button>
+    <Modal isOpen={isOpen} onClose={onClose} title="Member Enrollment">
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '10px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="form-group">
+            <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>FIRST NAME</label>
+            <input 
+              className="form-input" 
+              placeholder="e.g. John" 
+              value={form.firstName} 
+              onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} 
+              required 
+              style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>LAST NAME</label>
+            <input 
+              className="form-input" 
+              placeholder="e.g. Doe" 
+              value={form.lastName} 
+              onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} 
+              required 
+              style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div className="grid-2">
-            <div className="form-group">
-              <label className="form-label"><User size={12} style={{ display: 'inline', marginRight: 4 }} />First Name *</label>
-              <input className="form-input" placeholder="Alex" value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Last Name</label>
-              <input className="form-input" placeholder="Johnson" value={form.lastName} onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} />
-            </div>
-          </div>
+        <div className="form-group">
+          <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>EMAIL ADDRESS</label>
+          <input 
+            className="form-input" 
+            type="email" 
+            placeholder="john.doe@example.com" 
+            value={form.email} 
+            onChange={e => setForm(f => ({ ...f, email: e.target.value }))} 
+            required 
+            style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
+          />
+        </div>
 
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div className="form-group">
-            <label className="form-label"><Mail size={12} style={{ display: 'inline', marginRight: 4 }} />Email *</label>
-            <input className="form-input" type="email" placeholder="alex@example.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required />
+            <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>PHONE</label>
+            <input 
+              className="form-input" 
+              type="tel" 
+              placeholder="+91 00000 00000" 
+              value={form.phone} 
+              onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} 
+              style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
+            />
           </div>
-
           <div className="form-group">
-            <label className="form-label"><Phone size={12} style={{ display: 'inline', marginRight: 4 }} />Phone</label>
-            <input className="form-input" type="tel" placeholder="+1 555 000 0000" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+            <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>GENDER</label>
+            <select 
+              className="form-select" 
+              value={form.gender} 
+              onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
+              style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
+            >
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
           </div>
+        </div>
 
-          <div className="grid-2">
-            <div className="form-group">
-              <label className="form-label"><CreditCard size={12} style={{ display: 'inline', marginRight: 4 }} />Plan</label>
-              <select className="form-select" value={form.plan} onChange={e => setForm(f => ({ ...f, plan: e.target.value }))}>
-                <option value="basic">Basic</option>
-                <option value="premium">Premium</option>
-                <option value="elite">Elite</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Status</label>
-              <select className="form-select" value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                <option value="trial">Trial</option>
-                <option value="active">Active</option>
-              </select>
-            </div>
-          </div>
+        <div className="form-group">
+          <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>MEMBERSHIP PLAN</label>
+          <select 
+            className="form-select" 
+            value={form.planId} 
+            onChange={e => setForm(f => ({ ...f, planId: e.target.value }))}
+            required
+            disabled={loadingPlans}
+            style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
+          >
+            <option value="">{loadingPlans ? 'Fetching plans...' : 'Select a membership level'}</option>
+            {plans.map(p => (
+              <option key={p._id} value={p._id}>
+                {p.name} — ₹{p.price} ({p.duration.value} {p.duration.unit})
+              </option>
+            ))}
+          </select>
+        </div>
 
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 8 }}>
-            <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? <span className="spinner" /> : <Plus size={16} />}
-              {saving ? 'Adding...' : 'Add Member'}
-            </button>
-          </div>
-        </form>
-      </motion.div>
-    </motion.div>
+        <div className="modal-actions" style={{ marginTop: 12, display: 'flex', gap: 12 }}>
+          <button type="button" className="btn btn-ghost" onClick={onClose} style={{ flex: 1, borderRadius: 14 }}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={saving} style={{ flex: 2, borderRadius: 14, boxShadow: '0 8px 20px rgba(var(--primary-rgb), 0.3)' }}>
+            {saving ? <RefreshCw className="animate-spin" size={16} /> : <UserCheck size={16} />}
+            {saving ? 'PROCESSING...' : 'CONFIRM ENROLLMENT'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -98,23 +179,24 @@ function AddMemberModal({ onClose, onAdd }) {
 function MemberMenu({ member, onClose, onDelete }) {
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: -8 }}
+      initial={{ opacity: 0, scale: 0.95, y: -10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: -8 }}
+      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+      className="glass-panel"
       style={{
-        position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 100,
-        background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 14,
-        padding: 6, minWidth: 160, boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+        position: 'absolute', right: 0, top: '100%', marginTop: 8, zIndex: 100,
+        borderRadius: 16, padding: 8, minWidth: 200, border: '1px solid rgba(255,255,255,0.1)'
       }}
     >
-      <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start', borderRadius: 10, marginBottom: 2 }} onClick={onClose}>
-        <Edit size={15} /> Edit Member
+      <button className="dropdown-item" style={{ borderRadius: 10 }} onClick={() => { toast.success("Accessing profile..."); onClose(); }}>
+        <Edit size={14} /> Profile Settings
       </button>
-      <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start', borderRadius: 10, marginBottom: 2 }} onClick={onClose}>
-        <Calendar size={15} /> View History
+      <button className="dropdown-item" style={{ borderRadius: 10 }} onClick={() => { toast.success("Loading logs..."); onClose(); }}>
+        <Calendar size={14} /> Attendance History
       </button>
-      <button className="btn btn-sm" style={{ width: '100%', justifyContent: 'flex-start', borderRadius: 10, background: 'var(--danger-surface)', color: 'var(--danger)', border: 'none' }} onClick={() => { onDelete(member.id); onClose(); }}>
-        <Trash2 size={15} /> Remove Member
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '6px 0' }} />
+      <button className="dropdown-item text-danger" style={{ borderRadius: 10 }} onClick={() => { onDelete(member.id); onClose(); }}>
+        <Trash2 size={14} /> Terminate Access
       </button>
     </motion.div>
   );
@@ -123,167 +205,215 @@ function MemberMenu({ member, onClose, onDelete }) {
 export default function Members() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [extraMembers, setExtraMembers] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const allMembers = [
-    ...MOCK_MEMBERS.map(m => ({
-      id: m._id,
-      name: `${m.firstName} ${m.lastName}`,
-      email: m.email,
-      status: m.status,
-      plan: m.membershipPlan,
-      expiryDate: m.membershipExpiry,
-      lastVisit: m.joinDate ? new Date(m.joinDate).toDateString() : 'N/A'
-    })),
-    ...extraMembers
-  ];
+  const fetchMembers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await membersApi.getAll({ 
+        search: searchTerm,
+        status: filterStatus !== 'all' ? filterStatus : undefined 
+      });
+      const data = res.data.data || [];
+      const mapped = data.map(m => ({
+        id: m._id,
+        name: `${m.firstName} ${m.lastName}`,
+        email: m.email,
+        phone: m.phone,
+        status: m.membershipStatus || 'trial',
+        plan: m.currentMembershipId?.planName || 'No Plan',
+        expiryDate: m.membershipExpiry,
+        memberId: m.memberId || 'GF-0000',
+        avatar: m.photo
+      }));
+      setMembers(mapped);
+    } catch {
+      toast.error('Network error. Failed to sync members.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchTerm, filterStatus]);
 
-  const filtered = allMembers.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) || m.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || m.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  useEffect(() => {
+    const timer = setTimeout(fetchMembers, 300);
+    return () => clearTimeout(timer);
+  }, [fetchMembers]);
 
-  function handleAdd(form) {
-    setExtraMembers(prev => [...prev, {
-      id: `new-${Date.now()}`,
-      name: `${form.firstName} ${form.lastName}`,
-      email: form.email,
-      status: form.status,
-      plan: form.plan,
-      expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      lastVisit: 'Just joined'
-    }]);
-  }
-
-  function handleDelete(id) {
-    setExtraMembers(prev => prev.filter(m => m.id !== id));
-  }
+  const handleDelete = async (id) => {
+    if (!window.confirm('WARNING: Are you sure you want to terminate this membership access?')) return;
+    try {
+      await membersApi.delete(id);
+      toast.success('Access terminated');
+      fetchMembers();
+    } catch {
+      toast.error('System error. Termination failed.');
+    }
+  };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      style={{ display: 'flex', flexDirection: 'column', gap: 32, paddingBottom: 40 }}
+    >
+      {/* Header Section */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '2.4rem', fontWeight: 900, background: 'linear-gradient(to right, #fff, #888)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.02em' }}>
+            Member Directory
+          </h1>
+          <p style={{ color: 'var(--text-3)', fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Users size={14} color="var(--primary)" /> Total Active Workforce: {members.length}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn btn-ghost" style={{ borderRadius: 16, padding: '10px 20px', border: '1px solid rgba(255,255,255,0.05)' }} onClick={() => toast.success("Data compiled for export")}>
+            <Download size={18} /> EXPORT CSV
+          </button>
+          <button className="btn btn-primary" style={{ borderRadius: 16, padding: '10px 24px', boxShadow: '0 8px 25px rgba(var(--primary-rgb), 0.25)' }} onClick={() => setIsAddModalOpen(true)}>
+            <Plus size={18} /> NEW ENROLLMENT
+          </button>
+        </div>
+      </div>
 
-      {/* Header Actions */}
-      <div className="flex justify-between items-center flex-wrap" style={{ gap: 16 }}>
-        <div style={{ display: 'flex', gap: 12, flex: 1, minWidth: 280 }}>
-          <div className="input-wrapper" style={{ flex: 1, maxWidth: 320 }}>
-            <Search className="input-icon" size={16} />
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Search members..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="input-wrapper">
-            <Filter className="input-icon" size={16} />
-            <select
-              className="form-select"
-              style={{ paddingLeft: '2.5rem', width: 140 }}
-              value={filterStatus}
-              onChange={e => setFilterStatus(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="trial">Trial</option>
-              <option value="expired">Expired</option>
-            </select>
+      {/* Main Content Area */}
+      <div className="glass-panel" style={{ padding: 24, borderRadius: 32 }}>
+        {/* Filters and Search */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
+          <div style={{ display: 'flex', gap: 16, flex: 1, minWidth: 300 }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <Search style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)' }} size={18} />
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Search database by name, ID or electronic mail..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{ paddingLeft: 48, borderRadius: 18, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+              />
+            </div>
+            <div style={{ position: 'relative' }}>
+              <Filter style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)' }} size={18} />
+              <select
+                className="form-select"
+                value={filterStatus}
+                onChange={e => setFilterStatus(e.target.value)}
+                style={{ paddingLeft: 48, borderRadius: 18, width: 180, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
+              >
+                <option value="all">ALL ENTITIES</option>
+                <option value="active">ACTIVE ONLY</option>
+                <option value="trial">PROVISIONAL</option>
+                <option value="expired">EXPIRED</option>
+                <option value="suspended">FLAGGED</option>
+              </select>
+            </div>
           </div>
         </div>
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          whileHover={{ boxShadow: '0 8px 24px rgba(245,158,11,0.4)' }}
-          className="btn btn-primary"
-          onClick={() => setShowAddModal(true)}
-        >
-          <Plus size={18} /> Add Member
-        </motion.button>
-      </div>
 
-      {/* Count badge */}
-      <div style={{ fontSize: '0.85rem', color: 'var(--text-3)' }}>
-        Showing <strong style={{ color: 'var(--text-1)' }}>{filtered.length}</strong> members
-      </div>
-
-      {/* Members Table */}
-      <motion.div
-        className="card table-wrapper"
-        style={{ padding: 0, overflow: 'hidden' }}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Member</th>
-              <th>Status</th>
-              <th>Plan</th>
-              <th>Time Remaining</th>
-              <th>Last Visit</th>
-              <th style={{ width: 60 }}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(member => (
-              <tr key={member.id} style={{ position: 'relative' }}>
-                <td>
-                  <div className="flex items-center gap-3">
-                    <Avatar name={member.name} size="md" />
-                    <div>
-                      <div style={{ fontWeight: 600 }}>{member.name}</div>
-                      <div className="text-faint" style={{ fontSize: '0.8rem' }}>{member.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td><StatusBadge status={member.status} /></td>
-                <td><PlanBadge plan={member.plan} /></td>
-                <td>
-                  <div style={{ width: 120 }}>
-                    <DaysLeftBar expiry={member.expiryDate} />
-                  </div>
-                </td>
-                <td className="text-muted" style={{ fontSize: '0.85rem' }}>{member.lastVisit}</td>
-                <td style={{ position: 'relative' }}>
-                  <button
-                    className="btn btn-ghost btn-icon btn-sm text-faint"
-                    onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
+        {/* Custom Table Implementation */}
+        <div className="table-responsive" style={{ border: 'none' }}>
+          <table className="table" style={{ borderCollapse: 'separate', borderSpacing: '0 8px' }}>
+            <thead>
+              <tr style={{ background: 'transparent' }}>
+                <th style={{ background: 'transparent', color: 'var(--text-4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '12px 20px' }}>IDENTIFIER</th>
+                <th style={{ background: 'transparent', color: 'var(--text-4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>STATUS</th>
+                <th style={{ background: 'transparent', color: 'var(--text-4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>ACCESS LEVEL</th>
+                <th style={{ background: 'transparent', color: 'var(--text-4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>EXPIRATION</th>
+                <th style={{ background: 'transparent', color: 'var(--text-4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>CONTACT</th>
+                <th style={{ background: 'transparent', width: 60 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                Array(5).fill(0).map((_, i) => (
+                  <tr key={i}>
+                    <td colSpan={6} style={{ padding: '4px 0' }}>
+                      <div className="skeleton" style={{ height: 72, width: '100%', borderRadius: 20 }} />
+                    </td>
+                  </tr>
+                ))
+              ) : members.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ padding: '80px 0', textAlign: 'center' }}>
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      <Users size={64} style={{ margin: '0 auto 20px', color: 'rgba(255,255,255,0.05)' }} />
+                      <h3 style={{ color: 'var(--text-2)', fontSize: '1.2rem', fontWeight: 800 }}>DATABASE EMPTY</h3>
+                      <p style={{ color: 'var(--text-4)', fontSize: '0.9rem' }}>No records match your current terminal filters.</p>
+                    </motion.div>
+                  </td>
+                </tr>
+              ) : (
+                members.map((member, idx) => (
+                  <motion.tr 
+                    key={member.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    className="premium-card-hover"
+                    style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.03)', cursor: 'pointer' }}
                   >
-                    <MoreHorizontal size={16} />
-                  </button>
-                  <AnimatePresence>
-                    {openMenuId === member.id && (
-                      <MemberMenu
-                        member={member}
-                        onClose={() => setOpenMenuId(null)}
-                        onDelete={handleDelete}
-                      />
-                    )}
-                  </AnimatePresence>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={6}>
-                  <div className="empty-state" style={{ padding: '40px 20px' }}>
-                    <Search className="empty-icon" />
-                    <div className="empty-title">No members found</div>
-                    <div className="empty-desc">Try adjusting your search or filters.</div>
-                  </div>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </motion.div>
+                    <td style={{ border: 'none', borderRadius: '20px 0 0 20px', padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div style={{ position: 'relative' }}>
+                          <Avatar name={member.name} src={member.avatar} size="md" />
+                          {member.status === 'active' && <div style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, background: 'var(--success)', border: '2px solid var(--surface)', borderRadius: '50%', boxShadow: '0 0 10px var(--success)' }} />}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 800, color: '#fff', fontSize: '1rem' }}>{member.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, letterSpacing: '0.05em' }}>{member.memberId}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ border: 'none' }}><StatusBadge status={member.status} /></td>
+                    <td style={{ border: 'none' }}><PlanBadge plan={member.plan} /></td>
+                    <td style={{ border: 'none' }}>
+                      <div style={{ width: 140 }}>
+                        <DaysLeftBar expiry={member.expiryDate} />
+                      </div>
+                    </td>
+                    <td style={{ border: 'none' }}>
+                      <div style={{ fontSize: '0.85rem' }}>
+                        <div style={{ fontWeight: 700, color: '#fff' }}>{member.phone || 'NO SECURE LINE'}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-4)', fontWeight: 600 }}>{member.email}</div>
+                      </div>
+                    </td>
+                    <td style={{ border: 'none', borderRadius: '0 20px 20px 0', position: 'relative', textAlign: 'right', paddingRight: 20 }}>
+                      <button
+                        className="btn-icon"
+                        style={{ color: 'var(--text-4)', background: 'rgba(255,255,255,0.03)', borderRadius: 12, width: 36, height: 36 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(openMenuId === member.id ? null : member.id);
+                        }}
+                      >
+                        <MoreHorizontal size={18} />
+                      </button>
+                      <AnimatePresence>
+                        {openMenuId === member.id && (
+                          <MemberMenu
+                            member={member}
+                            onClose={() => setOpenMenuId(null)}
+                            onDelete={handleDelete}
+                          />
+                        )}
+                      </AnimatePresence>
+                    </td>
+                  </motion.tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      {/* Modal */}
-      <AnimatePresence>
-        {showAddModal && <AddMemberModal onClose={() => setShowAddModal(false)} onAdd={handleAdd} />}
-      </AnimatePresence>
-    </div>
+      <AddMemberModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={fetchMembers} 
+      />
+    </motion.div>
   );
 }

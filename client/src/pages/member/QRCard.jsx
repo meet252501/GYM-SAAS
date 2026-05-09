@@ -1,334 +1,349 @@
-import { motion, useMotionValue, useTransform, AnimatePresence } from 'framer-motion';
+/**
+ * MemberPass — Digital Membership Card with Interactive Reception Check-in Flow
+ */
+import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { ShieldCheck, Scan, Info, RefreshCw, Wifi } from 'lucide-react';
-import { useEffect, useState, useRef } from 'react';
+import {
+  Crown, Star, Zap, Clock,
+  RefreshCw, Info, Copy, Check, Maximize2, Minimize2, Loader2, Camera
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import useAuthStore from '../../store/authStore';
+import { attendanceApi } from '../../api';
+import { toast } from 'react-hot-toast';
 
-// Neon corner bracket SVG
-function CornerBracket({ position }) {
-  const transforms = {
-    tl: 'rotate(0deg)',
-    tr: 'rotate(90deg)',
-    br: 'rotate(180deg)',
-    bl: 'rotate(270deg)',
+// ─── Plan config ──────────────────────────────────────────────
+const PLAN_CONFIG = {
+  Elite:   { color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)',  Icon: Crown, gradient: 'linear-gradient(135deg,#F59E0B,#D97706)' },
+  Premium: { color: '#A855F7', bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.4)',  Icon: Star,  gradient: 'linear-gradient(135deg,#A855F7,#7C3AED)' },
+  Basic:   { color: '#3B82F6', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.3)',  Icon: Zap,   gradient: 'linear-gradient(135deg,#3B82F6,#2563EB)' },
+  Trial:   { color: '#10B981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)',  Icon: Zap,   gradient: 'linear-gradient(135deg,#10B981,#059669)' },
+};
+const getPlan = p => PLAN_CONFIG[p] || PLAN_CONFIG.Basic;
+
+export default function MemberPass() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const plan = user?.membershipPlan || 'Basic';
+  const cfg = getPlan(plan);
+  const memberId = user?.memberId || user?._id || 'GF-MEMBER';
+
+  // Member QR token states
+  const [memberToken, setMemberToken] = useState('');
+  const [loadingQR, setLoadingQR]     = useState(true);
+  const [copied, setCopied]           = useState(false);
+  const [zoomQR, setZoomQR]           = useState(false);
+
+  // Check-in history
+  const [checkIns] = useState([
+    { date: 'Yesterday', time: '08:42 AM', note: 'Duration: 1h 20m' },
+    { date: 'Mon, 5 May', time: '09:15 AM', note: 'Duration: 55m'  },
+  ]);
+
+  const fetchQR = async () => {
+    setLoadingQR(true);
+    try {
+      const res = await attendanceApi.getMemberQR();
+      setMemberToken(res.data.data?.token || res.data.token || '');
+    } catch (err) {
+      console.error('Failed to fetch member QR:', err);
+    } finally {
+      setLoadingQR(false);
+    }
   };
-  return (
-    <div style={{
-      position: 'absolute',
-      ...(position === 'tl' && { top: 0, left: 0 }),
-      ...(position === 'tr' && { top: 0, right: 0 }),
-      ...(position === 'br' && { bottom: 0, right: 0 }),
-      ...(position === 'bl' && { bottom: 0, left: 0 }),
-      width: 28, height: 28,
-      transform: transforms[position]
-    }}>
-      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2 26 L2 4 Q2 2 4 2 L26 2" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round"/>
-      </svg>
-    </div>
-  );
-}
-
-// Circular countdown ring
-function CountdownRing({ progress }) {
-  const radius = 22;
-  const circ = 2 * Math.PI * radius;
-  const dash = circ * progress;
-  return (
-    <svg width="54" height="54" viewBox="0 0 54 54">
-      <circle cx="27" cy="27" r={radius} stroke="rgba(255,255,255,0.08)" strokeWidth="3" fill="none" />
-      <motion.circle
-        cx="27" cy="27" r={radius}
-        stroke="var(--primary)"
-        strokeWidth="3"
-        fill="none"
-        strokeLinecap="round"
-        strokeDasharray={`${dash} ${circ}`}
-        strokeDashoffset={circ * 0.25}
-        style={{ filter: 'drop-shadow(0 0 4px rgba(245,158,11,0.8))' }}
-      />
-    </svg>
-  );
-}
-
-export default function QRCard() {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-120, 120], [18, -18]);
-  const rotateY = useTransform(x, [-120, 120], [-18, 18]);
-  const shimmerX = useTransform(x, [-120, 120], ['-80%', '180%']);
-
-  function handlePan(_, info) { x.set(info.offset.x); y.set(info.offset.y); }
-  function handlePanEnd() { x.set(0); y.set(0); }
-
-  const REFRESH_SECS = 30;
-  const [passCode, setPassCode] = useState(() => `GF-${Math.floor(100000 + Math.random() * 900000)}`);
-  const [timeLeft, setTimeLeft] = useState(REFRESH_SECS);
-  const [justRefreshed, setJustRefreshed] = useState(false);
-  const intervalRef = useRef(null);
-
-  function refresh() {
-    setPassCode(`GF-${Math.floor(100000 + Math.random() * 900000)}`);
-    setTimeLeft(REFRESH_SECS);
-    setJustRefreshed(true);
-    setTimeout(() => setJustRefreshed(false), 600);
-  }
 
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) { refresh(); return REFRESH_SECS; }
-        return t - 1;
-      });
-    }, 1000);
-    return () => clearInterval(intervalRef.current);
+    // Calling fetchQR() in a setTimeout to avoid cascading render warning
+    const timer = setTimeout(fetchQR, 0);
+    
+    // Refresh token every 5 minutes
+    const interval = setInterval(fetchQR, 5 * 60 * 1000);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
-  const progress = timeLeft / REFRESH_SECS;
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(memberId);
+    setCopied(true);
+    toast.success('Member ID copied!');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const expiryStr = user?.membershipExpiry
+    ? new Date(user.membershipExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    : 'Active';
+
+  const historyRows = [
+    { date: 'Today', time: '—', note: 'Show QR at desk to check in' },
+    ...checkIns
+  ].slice(0, 3);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28, paddingTop: 12, paddingBottom: 16 }}
-    >
-      {/* Header: How it works banner */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 480, margin: '0 auto', padding: '0 8px' }}>
+      
+      {/* ══ Header ══════════════════ */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <h2 style={{ margin: 0, fontWeight: 900, fontSize: '1.6rem', letterSpacing: '-0.02em' }}>Digital Pass</h2>
+        <p className="text-faint text-sm">Present your membership pass to check in at the reception desk.</p>
+      </div>
+
+      {/* ══ Section 1: Digital Membership Card ══════════════════ */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        style={{
-          background: 'rgba(245,158,11,0.07)',
-          border: '1px solid rgba(245,158,11,0.25)',
-          borderRadius: 16,
-          padding: '12px 18px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          width: '100%',
-          maxWidth: 340
-        }}
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{ position: 'relative' }}
       >
-        <div style={{ background: 'rgba(245,158,11,0.15)', borderRadius: 10, padding: 8, flexShrink: 0 }}>
-          <Scan size={20} color="var(--primary)" />
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-1)' }}>
-            Show this to staff at entry
-          </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 2 }}>
-            Staff scan your code — you don't scan anything
-          </div>
-        </div>
-      </motion.div>
+        {/* Card outer glow */}
+        <div style={{
+          position: 'absolute', inset: -2,
+          borderRadius: 24,
+          background: cfg.gradient,
+          opacity: 0.15,
+          filter: 'blur(18px)',
+          zIndex: 0,
+        }} />
 
-      {/* 3D Tilt Holographic Card */}
-      <motion.div
-        onPan={handlePan}
-        onPanEnd={handlePanEnd}
-        style={{ rotateX, rotateY, perspective: 1200, touchAction: 'none' }}
-      >
-        <motion.div
-          style={{
-            width: 310,
-            background: 'linear-gradient(145deg, rgba(28,28,34,0.96) 0%, rgba(14,14,18,0.99) 100%)',
-            borderRadius: 28,
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: `
-              0 40px 80px rgba(0,0,0,0.9),
-              0 0 0 1px rgba(255,255,255,0.04) inset,
-              0 0 60px rgba(245,158,11,0.05)
-            `,
-            overflow: 'hidden',
-            position: 'relative',
-            userSelect: 'none',
-          }}
-        >
-          {/* Animated shimmer sweep layer */}
-          <motion.div
-            style={{
-              position: 'absolute',
-              top: 0, bottom: 0,
-              width: '60%',
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)',
-              left: shimmerX,
-              pointerEvents: 'none',
-              zIndex: 20,
-            }}
-          />
-
-          {/* Subtle mesh gradient background */}
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: `
-              radial-gradient(ellipse at 0% 0%, rgba(245,158,11,0.08) 0%, transparent 50%),
-              radial-gradient(ellipse at 100% 100%, rgba(139,92,246,0.08) 0%, transparent 50%)
-            `,
-            pointerEvents: 'none'
-          }} />
-
-          {/* Content */}
-          <div style={{ padding: '28px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, position: 'relative', zIndex: 10 }}>
-
-            {/* Logo row */}
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{
-                  width: 28, height: 28,
-                  background: 'linear-gradient(135deg, var(--primary), #8b5cf6)',
-                  borderRadius: 8, color: 'white',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, fontSize: '0.85rem',
-                  boxShadow: '0 0 12px rgba(245,158,11,0.4)'
-                }}>G</div>
-                <span style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.3px' }}>GymFlow <span style={{ color: 'var(--primary)' }}>Pro</span></span>
+        <div style={{
+          position: 'relative', zIndex: 1,
+          background: `linear-gradient(140deg, var(--surface) 0%, rgba(9,9,11,0.95) 100%)`,
+          border: `1.5px solid var(--border)`,
+          borderRadius: 22, overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+        }}>
+          {/* Card top: info + QR */}
+          <div style={{ display: 'flex', gap: 16, padding: '24px 24px 20px', alignItems: 'center' }}>
+            {/* Left: member info */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {/* Plan badge */}
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '4px 12px', borderRadius: 30, width: 'fit-content',
+                background: cfg.bg, border: `1px solid ${cfg.border}`,
+                color: cfg.color, fontWeight: 800, fontSize: '0.72rem',
+              }}>
+                <cfg.Icon size={12} />{plan} Member
               </div>
-              {/* Live indicator */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 20, padding: '4px 10px' }}>
-                <motion.div
-                  animate={{ opacity: [1, 0.3, 1] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                  style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }}
-                />
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--success)' }}>LIVE</span>
-                <Wifi size={11} color="var(--success)" />
+
+              <div>
+                <div style={{ fontWeight: 900, fontSize: '1.35rem', lineHeight: 1.2 }}>
+                  {user?.firstName || 'Member'} {user?.lastName || ''}
+                </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  fontFamily: 'monospace', fontSize: '0.75rem',
+                  color: 'var(--text-3)', marginTop: 4, letterSpacing: '0.06em',
+                }}>
+                  <span>{memberId}</span>
+                  <button onClick={handleCopyId} style={{ background: 'none', border: 'none', color: 'var(--text-4)', cursor: 'pointer', padding: 2, display: 'flex' }}>
+                    {copied ? <Check size={12} color="var(--success)" /> : <Copy size={12} />}
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Expires</div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-2)' }}>{expiryStr}</div>
               </div>
             </div>
 
-            {/* QR Code with scanner line + corner brackets */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={passCode}
-                initial={{ opacity: 0, scale: 0.85 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.85 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            {/* Right: Member's own QR */}
+            <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <div 
+                onClick={() => setZoomQR(true)}
                 style={{
-                  position: 'relative',
-                  background: 'white',
-                  padding: 14,
-                  borderRadius: 18,
-                  boxShadow: justRefreshed
-                    ? '0 0 40px rgba(245,158,11,0.6), 0 0 80px rgba(245,158,11,0.2)'
-                    : '0 0 30px rgba(139,92,246,0.25)',
-                  transition: 'box-shadow 0.4s ease'
+                  padding: 10, background: 'white', borderRadius: 16,
+                  boxShadow: `0 0 24px ${cfg.bg}, 0 4px 16px rgba(0,0,0,0.4)`,
+                  border: `2.5px solid ${cfg.border}`,
+                  width: 128, height: 128,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  position: 'relative', cursor: 'pointer'
                 }}
               >
-                <QRCodeSVG value={passCode} size={190} level="H" />
-                {/* Animated scan line */}
-                <motion.div
-                  animate={{ top: ['4%', '92%', '4%'] }}
-                  transition={{ repeat: Infinity, duration: 2.5, ease: 'linear' }}
-                  style={{
-                    position: 'absolute',
-                    left: 10, right: 10, height: 2,
-                    background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.9), transparent)',
-                    boxShadow: '0 0 12px rgba(139,92,246,0.8)',
-                    borderRadius: 2
-                  }}
-                />
-                {/* Corner brackets */}
-                <CornerBracket position="tl" />
-                <CornerBracket position="tr" />
-                <CornerBracket position="br" />
-                <CornerBracket position="bl" />
-              </motion.div>
-            </AnimatePresence>
-
-            {/* User identity */}
-            <div style={{ textAlign: 'center', width: '100%' }}>
-              <h3 style={{ fontSize: '1.5rem', margin: '0 0 2px', letterSpacing: '-0.5px' }}>Alex Johnson</h3>
-              <p style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-3)', margin: 0 }}>{passCode}</p>
-              <div style={{
-                marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6,
-                background: 'rgba(16,185,129,0.1)', color: 'var(--success)',
-                padding: '5px 14px', borderRadius: 20, fontSize: '0.8rem', fontWeight: 700,
-                border: '1px solid rgba(16,185,129,0.25)',
-                boxShadow: '0 0 16px rgba(16,185,129,0.15)'
-              }}>
-                <ShieldCheck size={14} /> Active Membership
-              </div>
-            </div>
-
-            {/* Bottom: membership tier + countdown */}
-            <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '1px' }}>Plan</div>
-                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--primary)' }}>PRO Annual</div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CountdownRing progress={progress} />
-                  <div style={{ position: 'absolute', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>{timeLeft}s</span>
-                  </div>
+                {loadingQR ? (
+                  <Loader2 className="animate-spin" size={32} color="#000" />
+                ) : (
+                  <QRCodeSVG
+                    value={memberToken || memberId}
+                    size={108}
+                    bgColor="#ffffff"
+                    fgColor="#09090B"
+                    level="H"
+                    includeMargin={false}
+                  />
+                )}
+                <div style={{ position: 'absolute', bottom: 4, right: 4, background: 'rgba(0,0,0,0.6)', borderRadius: '50%', padding: 4, display: 'flex' }}>
+                  <Maximize2 size={10} color="#fff" />
                 </div>
-                <span style={{ fontSize: '0.6rem', color: 'var(--text-3)' }}>refresh</span>
+              </div>
+              <div style={{ fontSize: '0.58rem', color: 'var(--text-4)', fontWeight: 700, letterSpacing: '0.05em' }}>
+                TAP TO ZOOM
               </div>
             </div>
           </div>
-        </motion.div>
+
+          {/* Card bottom stripe */}
+          <div style={{
+            background: cfg.gradient,
+            height: 4, opacity: 0.8,
+          }} />
+          <div style={{
+            padding: '12px 24px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            background: 'rgba(255,255,255,0.02)'
+          }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-4)', fontWeight: 800, letterSpacing: '0.08em' }}>
+              GYMFLOW PRO ACTIVE PASS
+            </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              fontSize: '0.65rem', color: 'var(--success)', fontWeight: 700,
+            }}>
+              <motion.div
+                animate={{ scale: [1, 1.4, 1], opacity: [1, 0.4, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }}
+              />
+              LIVE PASS
+            </div>
+          </div>
+        </div>
       </motion.div>
 
-      {/* Instruction cards below */}
-      <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 340 }}>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          style={{ flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 16, padding: '14px 12px', textAlign: 'center' }}
-        >
-          <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>📱</div>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: 2 }}>You show</div>
-          <div style={{ fontSize: '0.65rem', color: 'var(--text-3)' }}>Display your QR at the door</div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45 }}
-          style={{ flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 16, padding: '14px 12px', textAlign: 'center' }}
-        >
-          <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>🏋️</div>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: 2 }}>Staff scan</div>
-          <div style={{ fontSize: '0.65rem', color: 'var(--text-3)' }}>Receptionist marks attendance</div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55 }}
-          style={{ flex: 1, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 16, padding: '14px 12px', textAlign: 'center' }}
-        >
-          <div style={{ fontSize: '1.5rem', marginBottom: 6 }}>✅</div>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: 2 }}>You're in!</div>
-          <div style={{ fontSize: '0.65rem', color: 'var(--text-3)' }}>Entry logged automatically</div>
-        </motion.div>
-      </div>
-
-      {/* Manual refresh */}
-      <motion.button
-        whileTap={{ scale: 0.94 }}
-        onClick={refresh}
+      {/* ══ Member Scan Mode Button ══════════════════ */}
+      <button 
+        onClick={() => navigate('/member/scan')}
         style={{
-          background: 'transparent',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          padding: '10px 24px',
-          color: 'var(--text-2)',
-          display: 'flex', alignItems: 'center', gap: 8,
-          fontSize: '0.85rem', fontWeight: 600,
-          cursor: 'pointer'
+          background: 'var(--primary)', color: '#fff', border: 'none',
+          padding: '12px 24px', borderRadius: 30, fontWeight: 800, fontSize: '0.95rem',
+          display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 8px 24px rgba(245,158,11,0.4)',
+          cursor: 'pointer', margin: '-8px auto 0 auto', width: 'fit-content'
         }}
       >
-        <motion.div animate={justRefreshed ? { rotate: 360 } : {}} transition={{ duration: 0.5 }}>
-          <RefreshCw size={15} />
-        </motion.div>
-        Generate New Code
-      </motion.button>
+        <Camera size={18} />
+        Scan Desk QR
+      </button>
 
-      {/* Security note */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-3)', fontSize: '0.73rem' }}>
-        <Info size={13} /> Code rotates every 30s for security
+      {/* ══ Refresh & Support Actions ══════════════════ */}
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+        <button 
+          onClick={fetchQR} 
+          disabled={loadingQR}
+          className="btn btn-ghost btn-sm"
+          style={{ display: 'flex', alignItems: 'center', gap: 6, borderRadius: 20, fontSize: '0.8rem', padding: '6px 14px' }}
+        >
+          <RefreshCw size={13} className={loadingQR ? 'animate-spin' : ''} />
+          Refresh Pass Code
+        </button>
       </div>
-    </motion.div>
+
+      {/* ══ Check-in Guide Instructions ══════════════════ */}
+      <motion.div 
+        className="card"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Info size={16} color="var(--primary)" />
+          <h4 style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.02em' }}>How to check in</h4>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[
+            { step: '01', text: 'Open this page on your phone screen when entering the gym.' },
+            { step: '02', text: 'Present the QR code above directly to the reception desk scanner/webcam.' },
+            { step: '03', text: 'Once verified, the reception panel logs your check-in instantly!' }
+          ].map((item, idx) => (
+            <div key={idx} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <span style={{ 
+                fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 800, 
+                color: 'var(--primary)', background: 'rgba(245,158,11,0.1)', 
+                padding: '2px 6px', borderRadius: 6 
+              }}>
+                {item.step}
+              </span>
+              <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-3)', lineHeight: 1.4 }}>
+                {item.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* ══ Section 3: Recent Check-in History ══════════════════ */}
+      <motion.div 
+        className="card" 
+        initial={{ opacity: 0, y: 12 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ delay: 0.14 }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <Clock size={16} color="var(--primary)" />
+          <h4 style={{ margin: 0, fontWeight: 800, fontSize: '0.9rem' }}>Recent Check-ins</h4>
+        </div>
+        {historyRows.map((r, i) => (
+          <div key={i} style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '10px 0',
+            borderBottom: i < historyRows.length - 1 ? '1px solid var(--border)' : 'none',
+            opacity: r.date === 'Today' && r.time === '—' ? 0.55 : 1,
+          }}>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{r.date}</div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 2 }}>{r.note}</div>
+            </div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-2)', fontWeight: 600 }}>{r.time}</div>
+          </div>
+        ))}
+      </motion.div>
+
+      {/* ══ Zoomed QR Modal ══════════════════ */}
+      <AnimatePresence>
+        {zoomQR && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setZoomQR(false)}
+            style={{
+              position: 'fixed', inset: 0, background: 'rgba(9,9,11,0.92)',
+              backdropFilter: 'blur(8px)', zIndex: 1000,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 20
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              style={{
+                background: 'white', padding: 24, borderRadius: 28,
+                boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <QRCodeSVG
+                value={memberToken || memberId}
+                size={260}
+                bgColor="#ffffff"
+                fgColor="#09090B"
+                level="H"
+                includeMargin={false}
+              />
+            </motion.div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontSize: '0.85rem', fontWeight: 600 }}>
+              <Minimize2 size={16} /> Tap anywhere to close
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </div>
   );
 }

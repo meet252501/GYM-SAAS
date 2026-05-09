@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, CreditCard, Bell, Shield, Heart, ChevronRight, Save, CheckCircle, Edit2, Camera } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../../store/authStore';
+import BadgeShowcase from '../../components/ui/BadgeShowcase';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -100,10 +102,12 @@ function Toast({ msg }) {
 
 export default function Profile() {
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
   const [toast, setToast] = useState(null);
   const [notifications, setNotifications] = useState({ email: true, push: true, class: false });
   const [healthSync, setHealthSync] = useState(true);
-  const [editProfile, setEditProfile] = useState({ name: user?.name || 'Alex Johnson', email: 'alex@gymflowpro.com', weight: '76', height: '180' });
+  const fullName = `${user?.firstName || 'Alex'} ${user?.lastName || 'Johnson'}`;
+  const [editProfile, setEditProfile] = useState({ name: fullName, email: user?.email || 'member@gymflowpro.com', weight: user?.weight ? String(user.weight) : '76', height: user?.height ? String(user.height) : '180' });
   const [saving, setSaving] = useState(false);
 
   function showToast(msg) {
@@ -152,8 +156,12 @@ export default function Profile() {
             <Camera size={13} color="white" />
           </motion.button>
         </div>
-        <h2 style={{ fontSize: '1.8rem', marginTop: 14, marginBottom: 4 }}>{editProfile.name || 'Alex Johnson'}</h2>
-        <p className="badge badge-epic" style={{ margin: '0 auto', padding: '4px 12px', display: 'inline-block' }}>PRO Member</p>
+        <h2 style={{ fontSize: '1.8rem', marginTop: 14, marginBottom: 4 }}>{editProfile.name}</h2>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+          <p className="badge badge-epic" style={{ margin: 0, padding: '4px 12px' }}>{user?.membershipPlan || 'Premium'} Member</p>
+          {user?.streak > 0 && <p style={{ margin: 0, padding: '4px 12px', background: 'rgba(245,158,11,0.15)', borderRadius: 20, fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)' }}>🔥 {user.streak} day streak</p>}
+          <p style={{ margin: 0, padding: '4px 12px', background: 'rgba(99,102,241,0.15)', borderRadius: 20, fontSize: '0.8rem', fontWeight: 700, color: '#818cf8' }}>💪 {user?.totalWorkouts || 0} workouts</p>
+        </div>
       </motion.div>
 
       {/* ── Stats ─────────────────────────────────────────── */}
@@ -166,6 +174,11 @@ export default function Profile() {
           <div className="text-faint text-sm">Height</div>
           <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>{editProfile.height}<span style={{ fontSize: '0.9rem', color: 'var(--text-3)' }}>cm</span></div>
         </div>
+      </motion.div>
+
+      {/* ── Badges ────────────────────────────────────────── */}
+      <motion.div variants={itemVariants}>
+        <BadgeShowcase earnedBadges={user?.badges || []} />
       </motion.div>
 
       {/* ── Settings Rows ─────────────────────────────────── */}
@@ -236,18 +249,28 @@ export default function Profile() {
                 </div>
                 <span className="badge badge-active">Active</span>
               </div>
-              <div style={{ padding: '12px 14px', background: 'var(--surface-3)', borderRadius: 12 }}>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-3)', marginBottom: 4 }}>Payment Method</div>
-                <div style={{ fontWeight: 700 }}>•••• •••• •••• 4242</div>
+              
+              <div style={{ marginTop: '8px' }}>
+                <h4 style={{ fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-2)' }}>Payment History</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    { id: 'INV-004', date: 'May 03, 2025', amount: 120, status: 'Paid' },
+                    { id: 'INV-001', date: 'Apr 03, 2025', amount: 120, status: 'Paid' },
+                    { id: 'CASH-992', date: 'Mar 03, 2025', amount: 120, status: 'Paid' },
+                  ].map(tx => (
+                    <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{tx.id}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{tx.date}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>${tx.amount}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>{tx.status}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                className="btn btn-ghost btn-sm"
-                onClick={() => showToast('Billing portal coming soon!')}
-                style={{ alignSelf: 'flex-start' }}
-              >
-                Manage Subscription →
-              </motion.button>
             </div>
           </SettingsRow>
 
@@ -290,7 +313,7 @@ export default function Profile() {
       <motion.div variants={itemVariants} style={{ paddingBottom: 24 }}>
         <motion.button
           whileTap={{ scale: 0.97 }}
-          onClick={logout}
+          onClick={async () => { await logout(); navigate('/login'); }}
           className="btn btn-danger btn-block"
           style={{ padding: '16px', borderRadius: '16px', fontSize: '1.05rem' }}
         >

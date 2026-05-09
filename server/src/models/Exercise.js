@@ -16,6 +16,7 @@ const exerciseSchema = new mongoose.Schema({
   tips: [String],
   videoUrl: String,
   imageUrl: String,
+  animationUrl: String,
   isCustom: { type: Boolean, default: false },
   gymId: { type: mongoose.Schema.Types.ObjectId, ref: 'Gym' }
 }, { timestamps: true });
