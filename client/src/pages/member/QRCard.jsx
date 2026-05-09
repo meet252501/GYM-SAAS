@@ -107,7 +107,7 @@ export default function MemberPass() {
           zIndex: 0,
         }} />
 
-        <div style={{
+        <div className="pulse-glow" style={{
           position: 'relative', zIndex: 1,
           background: `linear-gradient(140deg, var(--surface) 0%, rgba(9,9,11,0.95) 100%)`,
           border: `1.5px solid var(--border)`,

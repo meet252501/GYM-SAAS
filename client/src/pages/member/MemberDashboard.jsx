@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import useAuthStore from '../../store/authStore';
 import { badgeApi, nutritionApi, workoutsApi, classesApi } from '../../api';
+import CyberMatrix from '../../components/ui/CyberMatrix';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -98,12 +99,15 @@ export default function MemberDashboard() {
   const goal = nutrition?.goal || { calories: 2000, protein: 150, carbs: 250, fat: 65 };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}
-    >
+    <div style={{ position: 'relative', minHeight: '100vh', padding: '24px' }}>
+      <CyberMatrix intensity={0.05} />
+      
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        style={{ display: 'flex', flexDirection: 'column', gap: '22px', position: 'relative', zIndex: 1 }}
+      >
 
       {/* ── Welcome Hero ──────────────────────────────────── */}
       <motion.div variants={itemVariants}>
@@ -615,5 +619,6 @@ export default function MemberDashboard() {
       </motion.div>
 
     </motion.div>
+    </div>
   );
 }

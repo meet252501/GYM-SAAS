@@ -26,7 +26,15 @@ const badges = [
   { name: 'Comeback Kid', description: 'Return after a 14+ day gap', icon: '🔄', category: 'milestone', criteriaType: 'comeback', criteriaThreshold: 1, points: 20, rarity: 'common' },
   { name: 'Volume King', description: 'Lift 100,000 kg total', icon: '📊', category: 'workout', criteriaType: 'total_volume', criteriaThreshold: 100000, points: 150, rarity: 'epic' },
   { name: 'Founding Member', description: 'Joined in the first 30 days', icon: '🏅', category: 'milestone', criteriaType: 'founding_member', criteriaThreshold: 1, points: 100, rarity: 'legendary' },
-  { name: 'Goal Crusher', description: 'Achieved your fitness goal', icon: '🎯', category: 'milestone', criteriaType: 'goal_achieved', criteriaThreshold: 1, points: 200, rarity: 'epic' }
+  { name: 'Goal Crusher', description: 'Achieved your fitness goal', icon: '🎯', category: 'milestone', criteriaType: 'goal_achieved', criteriaThreshold: 1, points: 200, rarity: 'epic' },
+  { name: 'Night Owl', description: 'Check in after 9 PM, 5 times', icon: '🦉', category: 'attendance', criteriaType: 'late_checkins', criteriaThreshold: 5, points: 30, rarity: 'rare' },
+  { name: 'Gym Rat', description: '50 workouts logged', icon: '🐀', category: 'milestone', criteriaType: 'workouts_completed', criteriaThreshold: 50, points: 100, rarity: 'rare' },
+  { name: 'Titan', description: 'Lift 500,000 kg total', icon: '🦾', category: 'workout', criteriaType: 'total_volume', criteriaThreshold: 500000, points: 500, rarity: 'legendary' },
+  { name: 'Social Star', description: 'Share 5 workouts with friends', icon: '🌟', category: 'social', criteriaType: 'workouts_shared', criteriaThreshold: 5, points: 50, rarity: 'rare' },
+  { name: 'Early Bird Elite', description: '20 early check-ins', icon: '☀️', category: 'attendance', criteriaType: 'early_checkins', criteriaThreshold: 20, points: 150, rarity: 'epic' },
+  { name: 'Master of Motion', description: 'Attend 50 classes', icon: '🌀', category: 'milestone', criteriaType: 'classes_attended', criteriaThreshold: 50, points: 250, rarity: 'epic' },
+  { name: 'Cyber Warrior', description: 'Earn 10 unique badges', icon: '⚔️', category: 'milestone', criteriaType: 'badges_earned', criteriaThreshold: 10, points: 300, rarity: 'legendary' },
+  { name: 'God Mode', description: 'Complete 365-day check-in streak', icon: '⚡', category: 'attendance', criteriaType: 'streak_days', criteriaThreshold: 365, points: 2000, rarity: 'divine' }
 ];
 
 // ─── EXERCISES (sample) ───────────────────────────────────────

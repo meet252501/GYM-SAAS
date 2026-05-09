@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const Member = require('../models/Member');
 const User = require('../models/User');
-const Notification = require('../models/Notification');
+const NotificationService = require('../services/notification.service');
 const logger = require('../utils/logger');
 
 /**
@@ -35,7 +35,7 @@ const runMembershipSweep = async () => {
 
     for (const member of members7Days) {
       if (member.userId) {
-        await Notification.create({
+        await NotificationService.send({
           recipientId: member.userId,
           gymId: member.gymId,
           type: 'membership_expiry',
@@ -122,7 +122,12 @@ const initCronJobs = () => {
     runMembershipSweep();
   });
 
-  logger.info('📅 Cron scheduler initialized: Expiration alerts configured for daily 9:00 AM sweep.');
+  // Runs weekly on Monday at 10:00 AM (0 10 * * 1)
+  cron.schedule('0 10 * * 1', () => {
+    runLeaderboardDigest();
+  });
+
+  logger.info('📅 Cron scheduler initialized: Expiration alerts (Daily) & Leaderboard Digest (Weekly) configured.');
 
   // Run once on server boot in development environment to make sure database updates are instantly verified
   if (process.env.NODE_ENV !== 'production') {
@@ -133,7 +138,47 @@ const initCronJobs = () => {
   }
 };
 
+/**
+ * Weekly leaderboard highlight and rewards
+ */
+const runLeaderboardDigest = async () => {
+  logger.info('🏆 Starting weekly leaderboard digest...');
+  try {
+    const gyms = await User.distinct('gymId');
+    
+    for (const gymId of gyms) {
+      const topMembers = await Member.find({ gymId, isActive: true })
+        .sort({ totalPoints: -1 })
+        .limit(3);
+
+      if (topMembers.length === 0) continue;
+
+      // Notify the top 3
+      const medals = ['🥇 Gold', '🥈 Silver', '🥉 Bronze'];
+      for (let i = 0; i < topMembers.length; i++) {
+        const member = topMembers[i];
+        if (member.userId) {
+          await NotificationService.send({
+            recipientId: member.userId,
+            gymId: gymId,
+            type: 'leaderboard_reward',
+            title: `Weekly Champion! ${medals[i]}`,
+            message: `Amazing work! You finished in #${i+1} place this week. Keep crushing it!`,
+            data: { rank: i+1 }
+          });
+        }
+      }
+      
+      logger.info(`Weekly rewards sent for Gym: ${gymId}`);
+    }
+    logger.info('✅ Weekly leaderboard digest completed.');
+  } catch (error) {
+    logger.error('❌ Error during weekly leaderboard digest:', error);
+  }
+};
+
 module.exports = {
   initCronJobs,
-  runMembershipSweep
+  runMembershipSweep,
+  runLeaderboardDigest
 };

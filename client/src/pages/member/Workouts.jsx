@@ -7,6 +7,7 @@ import BadgeCelebrationModal from '../../components/ui/BadgeCelebrationModal';
 import { BADGE_DEFS } from '../../data/badges';
 import { workoutsApi } from '../../api';
 import { toast } from 'react-hot-toast';
+import CyberMatrix from '../../components/ui/CyberMatrix';
 
 function formatTime(secs) {
   const m = Math.floor(secs / 60).toString().padStart(2, '0');
@@ -278,8 +279,10 @@ export default function Workouts() {
   // ── Pre-Session Screen ─────────────────────────────────────
   if (!activeWorkout) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+      <div style={{ position: 'relative', minHeight: '80vh', display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
+        <CyberMatrix intensity={0.04} />
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <div>
             <h2 style={{ fontSize: '2rem', margin: 0, fontWeight: 900, letterSpacing: '-0.5px' }}>Train <span style={{ color: 'var(--primary)' }}>💪</span></h2>
             <p className="text-faint" style={{ margin: '4px 0 0', fontSize: '0.9rem' }}>Ready for a session, {user?.firstName || 'Champ'}?</p>
@@ -343,8 +346,9 @@ export default function Workouts() {
           <Play fill="currentColor" size={20} /> Start Session
         </motion.button>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // ── Active Session ────────────────────────────────────────
   const sessionTotalSets = currentExercises.reduce((a, e) => a + e.sets, 0);
@@ -352,7 +356,9 @@ export default function Workouts() {
   const sessionPct = Math.round((sessionDoneSets / sessionTotalSets) * 100);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ position: 'relative', minHeight: '100vh', padding: '20px' }}>
+      <CyberMatrix intensity={0.06} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
@@ -473,6 +479,7 @@ export default function Workouts() {
         badge={earnedBadge ? { ...earnedBadge, name: earnedBadge.label, description: earnedBadge.desc } : null} 
         onClose={closeBadgeModal} 
       />
+    </div>
     </div>
   );
 }

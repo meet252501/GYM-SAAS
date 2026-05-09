@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Html5Qrcode } from 'html5-qrcode';
+import { DotLottiePlayer } from '@dotlottie/react-player';
 import { CameraOff, CheckCircle, Loader2, ArrowLeft, ShieldCheck, Smartphone, Info, RefreshCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { attendanceApi } from '../../api';
@@ -154,18 +155,15 @@ export default function AttendanceScanner() {
                 exit={{ opacity: 0 }}
                 style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, background: '#09090b', zIndex: 10 }}
               >
-                <div style={{ position: 'relative' }}>
-                  <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                    style={{ width: 60, height: 60, borderRadius: '50%', border: '3px solid transparent', borderTopColor: 'var(--primary)', borderRightColor: 'var(--primary)' }}
+                <div style={{ width: 140, height: 140 }}>
+                  <DotLottiePlayer
+                    src="https://lottie.host/08075727-86f3-4672-9723-96b6188a867c/NfS9X65Gz.json"
+                    autoplay
+                    loop
                   />
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Smartphone size={24} color="var(--primary)" />
-                  </div>
                 </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.15em' }}>
-                  Initializing Camera...
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.2em', marginTop: -20 }}>
+                  Initializing Core...
                 </span>
               </motion.div>
             )}
@@ -207,13 +205,13 @@ export default function AttendanceScanner() {
                   backdropFilter: 'blur(16px)'
                 }}
               >
-                <motion.div 
-                   initial={{ scale: 0, rotate: -45 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-                   style={{ width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}
-                >
-                  <CheckCircle size={54} />
-                </motion.div>
-                <div style={{ fontWeight: 900, fontSize: '1.8rem', marginBottom: 4, letterSpacing: '-0.02em' }}>ACCESS GRANTED</div>
+                <div style={{ width: 160, height: 160, marginBottom: 10 }}>
+                  <DotLottiePlayer
+                    src="https://lottie.host/64703a4b-9e48-4395-9467-f417f7b2e666/p8Z78X65Gz.json"
+                    autoplay
+                  />
+                </div>
+                <div style={{ fontWeight: 900, fontSize: '1.8rem', marginBottom: 4, letterSpacing: '-0.02em', marginTop: -20 }}>ACCESS GRANTED</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 700, opacity: 0.95, marginBottom: 24 }}>Welcome back, {successData.member?.firstName}!</div>
                 
                 {successData.streak && (

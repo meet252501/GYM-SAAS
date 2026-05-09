@@ -173,4 +173,27 @@ const getMemberStats = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-module.exports = { getMembers, createMember, getMember, updateMember, deleteMember, getMemberQR, getExpiringSoon, getMemberStats };
+// @route   GET /api/v1/members/leaderboard
+const getLeaderboard = async (req, res, next) => {
+  try {
+    const members = await Member.find({ gymId: req.user.gymId, isActive: true })
+      .sort({ totalPoints: -1, 'streak.current': -1 })
+      .limit(100)
+      .select('firstName lastName memberId totalPoints streak membershipStatus');
+
+    // Add rank and dummy change for UI (in a real app, you'd store previous rank)
+    const leaderboard = members.map((m, index) => ({
+      id: m._id,
+      name: `${m.firstName} ${m.lastName}`,
+      points: m.totalPoints || 0,
+      streak: m.streak?.current || 0,
+      rank: index + 1,
+      tier: (m.totalPoints || 0) > 1000 ? 'Legendary' : (m.totalPoints || 0) > 500 ? 'Epic' : (m.totalPoints || 0) > 200 ? 'Rare' : 'Common',
+      change: 0 // Mocked for now
+    }));
+
+    return successResponse(res, leaderboard);
+  } catch (error) { next(error); }
+};
+
+module.exports = { getMembers, createMember, getMember, updateMember, deleteMember, getMemberQR, getExpiringSoon, getMemberStats, getLeaderboard };

@@ -2,15 +2,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Medal, TrendingUp, TrendingDown, Minus, Search } from 'lucide-react';
 import Avatar from '../../components/ui/Avatar';
 import { StreakBadge } from '../../components/ui/Badges';
-import { useState } from 'react';
-
-const MOCK_LEADERBOARD = [
-  { id: 1, name: 'Vikram Singh',   streak: 42, points: 1250, rank: 1, tier: 'Legendary', change: +2 },
-  { id: 2, name: 'Arjun Sharma',   streak: 28, points:  980, rank: 2, tier: 'Epic',      change:  0 },
-  { id: 3, name: 'Priya Patel',    streak: 15, points:  750, rank: 3, tier: 'Rare',      change: -1 },
-  { id: 4, name: 'Rohan Mehta',    streak: 12, points:  620, rank: 4, tier: 'Common',    change: +1 },
-  { id: 5, name: 'Ananya Gupta',   streak:  8, points:  450, rank: 5, tier: 'Common',    change:  0 },
-];
+import { DotLottiePlayer } from '@dotlottie/react-player';
+import { useEffect, useState } from 'react';
+import { membersApi } from '../../api';
+import toast from 'react-hot-toast';
 
 const PODIUM_HEIGHTS = [160, 120, 90]; // Gold, Silver, Bronze platform heights
 const PODIUM_COLORS = {
@@ -26,7 +21,7 @@ const MEDAL_ICONS = [
 ];
 
 function RankChange({ change }) {
-  if (change === 0) return <Minus size={13} color="var(--text-3)" />;
+  if (!change || change === 0) return <Minus size={13} color="var(--text-3)" />;
   if (change > 0) return (
     <span style={{ display: 'flex', alignItems: 'center', gap: 2, color: 'var(--success)', fontSize: '0.72rem', fontWeight: 700 }}>
       <TrendingUp size={13} /> +{change}
@@ -41,17 +36,52 @@ function RankChange({ change }) {
 
 export default function Leaderboard() {
   const [search, setSearch] = useState('');
-  const filtered = MOCK_LEADERBOARD.filter(u =>
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const res = await membersApi.getLeaderboard();
+        setLeaderboard(res.data || []);
+      } catch (err) {
+        toast.error('Failed to load leaderboard');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeaderboard();
+  }, []);
+
+  const filtered = leaderboard.filter(u =>
     u.name.toLowerCase().includes(search.toLowerCase())
   );
 
   // Podium order: 2nd left, 1st center, 3rd right
-  const top3 = MOCK_LEADERBOARD.slice(0, 3);
-  const podiumOrder = [top3[1], top3[0], top3[2]]; // [2nd, 1st, 3rd]
+  const top3 = leaderboard.slice(0, 3);
+  // Ensure we have 3 items for the podium layout even if fewer exist
+  const podiumData = [...top3];
+  while (podiumData.length < 3) podiumData.push({ id: `empty-${podiumData.length}`, name: '---', points: 0, streak: 0, rank: '-', tier: 'Common', change: 0 });
+  
+  const podiumOrder = [podiumData[1], podiumData[0], podiumData[2]]; // [2nd, 1st, 3rd]
   const podiumIndices = [1, 0, 2]; // visual positions map to rank-1
 
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}><DotLottiePlayer src="https://lottie.host/8563c635-430c-4467-96a8-f772e04368cc/Load.json" autoplay loop style={{ width: 150 }} /></div>;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div className="cyber-matrix" style={{ display: 'flex', flexDirection: 'column', gap: '28px', padding: '20px', borderRadius: '24px', minHeight: '80vh' }}>
+      
+      {/* Trophy Header Section */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: -40 }}>
+        <div style={{ width: 120, height: 120 }}>
+          <DotLottiePlayer
+            src="https://lottie.host/46481776-9286-4e55-876b-952328d9756b/Trophy.json"
+            autoplay
+            loop
+          />
+        </div>
+      </div>
 
       {/* Animated Podium */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 12, paddingTop: 24 }}>

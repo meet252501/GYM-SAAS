@@ -17,6 +17,7 @@ export const membersApi = {
   getQR: (id) => client.get(`/members/${id}/qr`),
   getExpiringSoon: (days = 7) => client.get('/members/expiring-soon', { params: { days } }),
   getStats: () => client.get('/members/stats'),
+  getLeaderboard: () => client.get('/members/leaderboard'),
 };
 
 export const analyticsApi = {

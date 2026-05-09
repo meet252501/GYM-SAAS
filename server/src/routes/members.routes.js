@@ -3,10 +3,12 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/auth.middleware');
 const {
   getMembers, createMember, getMember, updateMember, deleteMember,
-  getMemberQR, getExpiringSoon, getMemberStats
+  getMemberQR, getExpiringSoon, getMemberStats, getLeaderboard
 } = require('../controllers/members.controller');
 
 router.use(protect);
+
+router.get('/leaderboard', getLeaderboard);
 
 router.route('/')
   .get(authorize('owner', 'trainer'), getMembers)

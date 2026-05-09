@@ -15,6 +15,13 @@
   --primary-surface: rgba(245, 158, 11, 0.08);
   --primary-border: rgba(245, 158, 11, 0.25);
   --primary-glow: 0 0 24px rgba(245, 158, 11, 0.3);
+  
+  /* Cyber Neon Palette */
+  --neon-orange: #F59E0B;
+  --neon-purple: #8B5CF6;
+  --neon-blue: #3B82F6;
+  --neon-green: #10B981;
+  --neon-red: #EF4444;
 
   /* Status */
   --success: #10B981;
@@ -654,6 +661,28 @@ h4 { font-size: 1.1rem; }
 .stagger-2 { animation-delay: 0.1s; }
 .stagger-3 { animation-delay: 0.15s; }
 .stagger-4 { animation-delay: 0.2s; }
+
+/* Cyber Matrix Background */
+.cyber-matrix {
+  position: relative;
+}
+.cyber-matrix::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.2); }
+  50% { box-shadow: 0 0 40px rgba(245,158,11,0.4); }
+}
+.pulse-glow { animation: pulse-glow 2s infinite ease-in-out; }
 
 /* ─── Responsive ────────────────────────────────────────── */
 @media (max-width: 768px) {

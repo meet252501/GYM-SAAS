@@ -10,6 +10,7 @@ import Avatar from '../../components/ui/Avatar';
 import { differenceInDays } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { analyticsApi, membersApi } from '../../api';
+import CyberMatrix from '../../components/ui/CyberMatrix';
 
 // Custom Tooltip for Recharts
 const CustomTooltip = ({ active, payload, label }) => {
@@ -127,7 +128,9 @@ export default function Dashboard() {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 32, paddingBottom: 40 }}>
+    <div style={{ position: 'relative', minHeight: '100vh', padding: '24px' }}>
+      <CyberMatrix intensity={0.03} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 32, paddingBottom: 40 }}>
       
       {/* Header Area */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -302,6 +305,7 @@ export default function Dashboard() {
           </motion.div>
 
         </div>
+      </div>
       </div>
     </div>
   );

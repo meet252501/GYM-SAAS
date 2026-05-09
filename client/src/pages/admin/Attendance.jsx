@@ -8,7 +8,9 @@ import { attendanceApi } from '../../api';
 import Avatar from '../../components/ui/Avatar';
 import { Html5Qrcode } from 'html5-qrcode';
 import { QRCodeSVG } from 'qrcode.react';
+import { DotLottiePlayer } from '@dotlottie/react-player';
 import toast from 'react-hot-toast';
+import CyberMatrix from '../../components/ui/CyberMatrix';
 
 // ─── Plan styling ─────────────────────────────────────────────
 const PLAN = {
@@ -259,7 +261,10 @@ export default function Attendance() {
   }, [scanMode, handleDecodedQR]);
 
   return (
-    <div style={{ padding: '24px 32px', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 32 }}>
+    <div style={{ position: 'relative', minHeight: '100vh', padding: '24px 32px', overflow: 'hidden' }}>
+      <CyberMatrix intensity={0.05} />
+      
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 32 }}>
       <AnimatePresence>
         {banner && <CheckInBanner member={banner} onDismiss={() => setBanner(null)} />}
       </AnimatePresence>
@@ -365,7 +370,18 @@ export default function Attendance() {
             </div>
           ) : (
             <div style={{ width: '100%', maxWidth: 500 }}>
-              <div id="attendance-reader" style={{ width: '100%', height: 360, background: '#000', borderRadius: 32, overflow: 'hidden', border: '2px solid var(--border)' }} />
+              <div style={{ position: 'relative' }}>
+                <div id="attendance-reader" style={{ width: '100%', height: 360, background: '#000', borderRadius: 32, overflow: 'hidden', border: '2px solid var(--border)' }} />
+                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 220, height: 220 }}>
+                    <DotLottiePlayer
+                      src="https://lottie.host/86d4e868-3e5e-4b4d-9654-e0c656e63233/QR_Scan.json"
+                      autoplay
+                      loop
+                    />
+                  </div>
+                </div>
+              </div>
               <div style={{ marginTop: 32 }}>
                 <form onSubmit={handleScan} className="input-wrapper">
                   <Search className="input-icon" size={20} />
@@ -411,6 +427,7 @@ export default function Attendance() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 const { Badge, MemberBadge } = require('../models/Badge');
 const Member = require('../models/Member');
-const Notification = require('../models/Notification');
+const NotificationService = require('./notification.service');
 
 /**
  * BadgeService - Handles gamification logic
@@ -42,7 +42,7 @@ class BadgeService {
 
         // 3. Create notification for the User
         if (member.userId) {
-          await Notification.create({
+          await NotificationService.send({
             recipientId: member.userId,
             gymId: member.gymId,
             title: 'New Badge Unlocked! 🏆',
