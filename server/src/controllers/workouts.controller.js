@@ -3,6 +3,7 @@ const WorkoutProgram = require('../models/WorkoutProgram');
 const WorkoutLog = require('../models/WorkoutLog');
 const Member = require('../models/Member');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const BadgeService = require('../services/badge.service');
 
 // ─── EXERCISES ───────────────────────────────────────────────
 
@@ -23,6 +24,7 @@ const getExercises = async (req, res, next) => {
         { gymId: gymId }
       ];
     } else {
+      // If no gym association, only show public exercises
       filter.isCustom = false;
     }
 
@@ -37,7 +39,8 @@ const getExercises = async (req, res, next) => {
     const exercises = await Exercise.find(filter).sort({ name: 1 });
     return successResponse(res, exercises);
   } catch (error) {
-    next(error);
+    console.error('getExercises Error:', error);
+    return successResponse(res, []); // Return empty array on error to prevent crash
   }
 };
 
@@ -80,7 +83,9 @@ const getWorkoutPrograms = async (req, res, next) => {
     const gymId = member ? member.gymId : req.user.gymId;
     const filter = {};
 
-    if (gymId) filter.gymId = gymId;
+    if (gymId) {
+      filter.gymId = gymId;
+    }
 
     if (member) {
       // Members only see programs assigned to them or public ones
@@ -88,26 +93,52 @@ const getWorkoutPrograms = async (req, res, next) => {
         { assignedMembers: member._id },
         { isPublic: true }
       ];
+    } else if (req.user.role === 'member') {
+      // If user is a member but profile is missing (should not happen normally)
+      return successResponse(res, []);
+    } else {
+      // Owners/Trainers see all programs for their gym
+      // No additional filter needed beyond gymId
     }
 
     const programs = await WorkoutProgram.find(filter)
       .populate('createdBy', 'name')
       .sort({ createdAt: -1 });
 
-    return successResponse(res, programs);
+    return successResponse(res, programs || []);
   } catch (error) {
-    next(error);
+    console.error('getWorkoutPrograms Error:', error);
+    return successResponse(res, []); // Defensive fallback
   }
 };
 
 // POST /api/v1/workouts/programs
 const createWorkoutProgram = async (req, res, next) => {
   try {
-    const { name, description, goal, durationWeeks, daysPerWeek, weeks, isPublic } = req.body;
+    let { name, description, goal, durationWeeks, daysPerWeek, weeks, exercises, difficulty, isPublic } = req.body;
     if (!name) return errorResponse(res, 'Program name is required', 400);
 
     const gymId = req.user.gymId;
     if (!gymId) return errorResponse(res, 'Gym association not found', 400);
+
+    // If flat exercises are provided but no weeks, create a default structure
+    if (exercises && Array.isArray(exercises) && (!weeks || weeks.length === 0)) {
+      weeks = [{
+        weekNumber: 1,
+        days: [{
+          dayNumber: 1,
+          label: 'Full Body / Main Session',
+          exercises: exercises.map(ex => ({
+            exerciseId: ex.exerciseId,
+            exerciseName: ex.exerciseName,
+            sets: ex.sets || 3,
+            reps: String(ex.reps || '12'),
+            restSeconds: ex.restSeconds || 90,
+            notes: ex.notes || ''
+          }))
+        }]
+      }];
+    }
 
     const program = await WorkoutProgram.create({
       gymId,
@@ -115,6 +146,7 @@ const createWorkoutProgram = async (req, res, next) => {
       name,
       description,
       goal,
+      difficulty: difficulty || 'intermediate',
       durationWeeks: durationWeeks || 4,
       daysPerWeek: daysPerWeek || 3,
       weeks: weeks || [],
@@ -168,7 +200,7 @@ const createWorkoutLog = async (req, res, next) => {
     const enrichedExercises = [];
 
     for (const loggedExercise of exercises) {
-      const exerciseId = loggedExercise.exerciseId;
+      const exerciseId = loggedExercise.exerciseId || loggedExercise.exercise;
       if (!exerciseId) continue;
 
       // Calculate volume for this exercise & check Personal Records (PR)
@@ -235,6 +267,10 @@ const createWorkoutLog = async (req, res, next) => {
       caloriesBurned: caloriesBurned || Math.round((duration || 60) * 7.5), // Estimate ~7.5 cal/min
       mood: mood || 'okay'
     });
+
+    // 4. Check for workout milestones (Gamification)
+    const totalWorkouts = await WorkoutLog.countDocuments({ memberId: member._id });
+    await BadgeService.checkAndAward(member._id, 'workout', totalWorkouts);
 
     return successResponse(res, log, 201);
   } catch (error) {

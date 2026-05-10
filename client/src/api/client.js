@@ -6,7 +6,7 @@ const client = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
-  timeout: 10000, // 10 second timeout — fast error feedback
+  timeout: 30000, // 30 second timeout — for more stable neural links
 });
 
 // Attach access token

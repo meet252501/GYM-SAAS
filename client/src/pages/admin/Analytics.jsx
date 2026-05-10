@@ -134,6 +134,7 @@ export default function Analytics() {
   const [revData, setRevData]     = useState([]);
   const [membersData, setMembersData] = useState([]);
   const [dashboardStats, setDashboardStats] = useState(null);
+  const [muscleData, setMuscleData] = useState([]);
 
   const [expiringRisk, setExpiringRisk] = useState({ in7: 0, in14: 0, in30: 0 });
 
@@ -143,7 +144,7 @@ export default function Analytics() {
     const fetchAnalytics = async () => {
       setLoading(true);
       try {
-        const [attRes, revRes, dashRes, memsRes, exp7, exp14, exp30] = await Promise.all([
+        const [attRes, revRes, dashRes, memsRes, exp7, exp14, exp30, muscleRes] = await Promise.all([
           analyticsApi.getAttendanceChart(days),
           analyticsApi.getRevenue(days),
           analyticsApi.getDashboard(),
@@ -151,6 +152,7 @@ export default function Analytics() {
           membersApi.getExpiringSoon(7),
           membersApi.getExpiringSoon(14),
           membersApi.getExpiringSoon(30),
+          analyticsApi.getMuscleFocus(days),
         ]);
 
         if (attRes.data.success) {
@@ -182,6 +184,13 @@ export default function Analytics() {
           in14: exp14.data?.data?.length || 0,
           in30: exp30.data?.data?.length || 0,
         });
+
+        if (muscleRes?.data?.success) {
+          setMuscleData(muscleRes.data.data.map(d => ({
+            name: d._id.charAt(0).toUpperCase() + d._id.slice(1),
+            value: d.count
+          })));
+        }
 
       } catch (err) {
         console.error('Error fetching analytics:', err);
@@ -349,23 +358,58 @@ export default function Analytics() {
         </motion.div>
       </div>
 
-      {/* Planning stats */}
-      <motion.div className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h3 style={{ margin: '0 0 16px', fontWeight: 800 }}>⚠️ Renewal Risk</h3>
-        <div style={{ display: 'flex', gap: 12 }}>
-          {[
-            { label: 'Expire in 7 days', count: expiringRisk.in7, color: 'var(--danger)' },
-            { label: 'Expire in 14 days', count: expiringRisk.in14, color: 'var(--warning)' },
-            { label: 'Expire in 30 days', count: expiringRisk.in30, color: 'var(--info)' },
-          ].map(r => (
-            <div key={r.label} style={{ flex: 1, background: 'var(--surface-2)', borderRadius: 12,
-              padding: '14px 16px', border: `1px solid ${r.color}33` }}>
-              <div style={{ fontSize: '1.8rem', fontWeight: 900, color: r.color }}>{loading ? '-' : r.count}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{r.label}</div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
+      {/* Muscle Focus + Renewal Risk */}
+      <div className="grid-2">
+        <motion.div className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <h3 style={{ margin: '0 0 16px', fontWeight: 800 }}>Muscle Group Focus</h3>
+          <div style={{ height: 200, display: 'flex', alignItems: 'center', gap: 16 }}>
+            {loading ? (
+               <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)' }}>Loading Data...</div>
+            ) : muscleData.length > 0 ? (
+              <>
+                <ResponsiveContainer width="55%" height="100%">
+                  <PieChart>
+                    <Pie data={muscleData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={4} dataKey="value">
+                      {muscleData.map((d, i) => (
+                        <Cell key={i} fill={`hsl(${200 + (i * 45)}, 70%, 60%)`} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<Tip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 180, overflowY: 'auto' }}>
+                  {muscleData.map((d, i) => (
+                    <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: `hsl(${200 + (i * 45)}, 70%, 60%)`, flexShrink: 0 }} />
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600 }}>{d.name}</div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginLeft: 'auto' }}>{d.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+               <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-3)' }}>No training data</div>
+            )}
+          </div>
+        </motion.div>
+
+        <motion.div className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <h3 style={{ margin: '0 0 16px', fontWeight: 800 }}>⚠️ Renewal Risk</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { label: 'Expire in 7 days', count: expiringRisk.in7, color: 'var(--danger)' },
+              { label: 'Expire in 14 days', count: expiringRisk.in14, color: 'var(--warning)' },
+              { label: 'Expire in 30 days', count: expiringRisk.in30, color: 'var(--info)' },
+            ].map(r => (
+              <div key={r.label} style={{ flex: 1, background: 'var(--surface-2)', borderRadius: 12,
+                padding: '12px 16px', border: `1px solid ${r.color}33`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-3)' }}>{r.label}</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: r.color }}>{loading ? '-' : r.count}</div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
 
       {/* Individual member list */}
       <motion.div className="card" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>

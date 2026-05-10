@@ -25,7 +25,7 @@ const generateTokens = (userId) => {
 // @access  Public
 const register = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, password, gymName, gymPhone } = req.body;
+    const { firstName, lastName, email, password, gymName, gymPhone, gymCity } = req.body;
 
     if (!firstName || !lastName || !email || !password || !gymName) {
       return errorResponse(res, 'Please fill all required fields', 400);
@@ -40,6 +40,7 @@ const register = async (req, res, next) => {
       name: gymName,
       phone: gymPhone || '',
       email,
+      address: { city: gymCity || '' },
       ownerId: 'temp' // will update
     });
 
@@ -113,6 +114,10 @@ const login = async (req, res, next) => {
       userData.streak = member.streak?.current || 0;
       userData.totalWorkouts = member.totalWorkouts || 0;
       userData.memberId = member._id;
+      userData.weight = member.currentMetrics?.weight || 0;
+      userData.height = member.currentMetrics?.height || 0;
+      userData.photo = member.photo || '';
+      userData.preferences = member.preferences || { emailNotifications: true, pushNotifications: true, healthSync: false };
     }
 
     return successResponse(res, {
@@ -178,6 +183,10 @@ const getMe = async (req, res, next) => {
       userData.streak = member.streak?.current || 0;
       userData.totalWorkouts = member.totalWorkouts || 0;
       userData.memberId = member._id;
+      userData.weight = member.currentMetrics?.weight || 0;
+      userData.height = member.currentMetrics?.height || 0;
+      userData.photo = member.photo || '';
+      userData.preferences = member.preferences || { emailNotifications: true, pushNotifications: true, healthSync: false };
     }
 
     return successResponse(res, { user: userData, gym });
@@ -186,4 +195,73 @@ const getMe = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, refreshToken, logout, getMe };
+// @route   PATCH /api/v1/auth/me
+// @access  Auth
+const updateMe = async (req, res, next) => {
+  try {
+    const { firstName, lastName, weight, height, photo, preferences } = req.body;
+    
+    const member = await Member.findOne({ userId: req.user._id });
+    if (!member) return errorResponse(res, 'Member profile not found', 404);
+
+    if (firstName) member.firstName = firstName.trim();
+    if (lastName) member.lastName = lastName.trim();
+    
+    // Strict whitelist for preferences to prevent XSS/Mass Assignment
+    if (preferences && typeof preferences === 'object') {
+      const allowedKeys = ['emailNotifications', 'pushNotifications', 'healthSync', 'theme'];
+      allowedKeys.forEach(key => {
+        if (preferences[key] !== undefined) {
+          // Basic sanitization for strings, boolean for others
+          if (typeof preferences[key] === 'string') {
+            member.preferences[key] = preferences[key].replace(/<[^>]*>?/gm, '').substring(0, 50);
+          } else {
+            member.preferences[key] = !!preferences[key];
+          }
+        }
+      });
+    }
+
+    // Basic URL validation for photo
+    if (photo !== undefined) {
+      if (photo === '' || photo.startsWith('http') || photo.startsWith('data:image')) {
+        member.photo = photo;
+      }
+    }
+    
+    if (weight !== undefined || height !== undefined) {
+      if (!member.currentMetrics) member.currentMetrics = { weight: 0, height: 0 };
+      
+      // Also add to weight history if weight changed
+      if (weight !== undefined && weight !== member.currentMetrics.weight) {
+        member.weightHistory.push({ weight, date: new Date() });
+        member.currentMetrics.weight = weight;
+      }
+      
+      if (height !== undefined) {
+        member.currentMetrics.height = height;
+      }
+      
+      member.currentMetrics.updatedAt = new Date();
+    }
+
+    await member.save();
+    
+    const userData = req.user.toJSON();
+    userData.firstName = member.firstName;
+    userData.lastName = member.lastName;
+    userData.streak = member.streak?.current || 0;
+    userData.totalWorkouts = member.totalWorkouts || 0;
+    userData.memberId = member._id;
+    userData.weight = member.currentMetrics?.weight || 0;
+    userData.height = member.currentMetrics?.height || 0;
+    userData.photo = member.photo || '';
+    userData.preferences = member.preferences;
+
+    return successResponse(res, { user: userData });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { register, login, refreshToken, logout, getMe, updateMe };

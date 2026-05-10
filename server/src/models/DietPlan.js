@@ -20,6 +20,7 @@ const dietPlanSchema = new mongoose.Schema({
     items: [String],
     calories: Number
   }],
+  assignedMembers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Member' }],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });

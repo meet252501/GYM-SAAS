@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, Dumbbell, QrCode, CreditCard,
-  BarChart3, Trophy, Settings, ChevronLeft, LogOut, Smartphone, Utensils
+  BarChart3, Trophy, Settings, ChevronLeft, LogOut, Smartphone, Utensils, ClipboardList
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import AdminAI from '../ai/AdminAI';
@@ -13,8 +13,9 @@ const NAV = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { path: '/admin/members', icon: Users, label: 'Members' },
   { path: '/admin/classes', icon: Dumbbell, label: 'Classes' },
+  { path: '/admin/programs', icon: ClipboardList, label: 'Programs' },
   { path: '/admin/diet-plans', icon: Utensils, label: 'Diet Plans' },
-  { path: '/admin/attendance', icon: QrCode, label: 'Attendance' },
+  { path: '/member/scan', icon: QrCode, label: 'Check-in Kiosk' },
   { path: '/admin/payments', icon: CreditCard, label: 'Payments' },
   { path: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   { path: '/admin/leaderboard', icon: Trophy, label: 'Leaderboard' },

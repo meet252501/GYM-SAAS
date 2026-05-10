@@ -228,6 +228,7 @@ export default function Members() {
         plan: m.currentMembershipId?.planName || 'No Plan',
         expiryDate: m.membershipExpiry,
         memberId: m.memberId || 'GF-0000',
+        accessPin: m.accessPin || '----',
         avatar: m.photo
       }));
       setMembers(mapped);
@@ -327,6 +328,7 @@ export default function Members() {
                 <th style={{ background: 'transparent', color: 'var(--text-4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>ACCESS LEVEL</th>
                 <th style={{ background: 'transparent', color: 'var(--text-4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>EXPIRATION</th>
                 <th style={{ background: 'transparent', color: 'var(--text-4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>CONTACT</th>
+                <th style={{ background: 'transparent', color: 'var(--text-4)', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>PIN</th>
                 <th style={{ background: 'transparent', width: 60 }}></th>
               </tr>
             </thead>
@@ -382,6 +384,20 @@ export default function Members() {
                       <div style={{ fontSize: '0.85rem' }}>
                         <div style={{ fontWeight: 700, color: '#fff' }}>{member.phone || 'NO SECURE LINE'}</div>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-4)', fontWeight: 600 }}>{member.email}</div>
+                      </div>
+                    </td>
+                    <td style={{ border: 'none' }}>
+                      <div style={{ 
+                        fontSize: '0.85rem', 
+                        fontWeight: 900, 
+                        color: 'var(--primary)', 
+                        background: 'rgba(var(--primary-rgb), 0.1)', 
+                        padding: '4px 10px', 
+                        borderRadius: 8,
+                        display: 'inline-block',
+                        letterSpacing: '0.1em'
+                      }}>
+                        {member.accessPin}
                       </div>
                     </td>
                     <td style={{ border: 'none', borderRadius: '0 20px 20px 0', position: 'relative', textAlign: 'right', paddingRight: 20 }}>

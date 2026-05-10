@@ -104,6 +104,7 @@ const useAuthStore = create((set) => ({
   },
 
   updateGym: (gym) => set({ gym }),
+  updateUser: (userData) => set((state) => ({ user: { ...state.user, ...userData } })),
 }));
 
 export default useAuthStore;

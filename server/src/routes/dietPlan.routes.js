@@ -6,7 +6,8 @@ const {
   getDietPlan,
   createDietPlan,
   updateDietPlan,
-  deleteDietPlan
+  deleteDietPlan,
+  assignDietPlan
 } = require('../controllers/dietPlan.controller');
 
 router.use(protect);
@@ -19,5 +20,7 @@ router.route('/:id')
   .get(getDietPlan)
   .put(authorize('owner', 'trainer'), updateDietPlan)
   .delete(authorize('owner', 'trainer'), deleteDietPlan);
+
+router.post('/:id/assign', authorize('owner', 'trainer'), assignDietPlan);
 
 module.exports = router;

@@ -10,6 +10,9 @@ const { v4: uuidv4 } = require('uuid');
 // Replay protection cache (10 min expiry)
 const jtiCache = new NodeCache({ stdTTL: 600 });
 
+// Kiosk PIN Cache (30s expiry)
+const kioskPinCache = new NodeCache({ stdTTL: 30 });
+
 // Helper: update streak on check-in
 const updateStreak = async (member) => {
   const now = new Date();
@@ -52,136 +55,54 @@ const updateStreak = async (member) => {
   return isNewDay;
 };
 
-// @desc    Generate rotating QR token for Gym Display
-// @route   GET /api/v1/attendance/qr-token
-// @access  Private (Owner/Trainer)
-const getRotatingToken = async (req, res, next) => {
+
+// @desc    Member checks in via Terminal PIN
+// @route   POST /api/v1/attendance/pin-checkin
+// @access  Private (Owner/Trainer/Staff)
+const pinCheckin = async (req, res, next) => {
   try {
-    const code = uuidv4().substring(0, 6).toUpperCase();
-    const token = jwt.sign(
-      { 
-        gymId: req.user.gymId, 
-        purpose: 'gym_checkin',
-        code,
-        jti: uuidv4() 
-      },
-      process.env.QR_SECRET || process.env.JWT_SECRET,
-      { expiresIn: '35s' }
-    );
+    const { pin } = req.body;
+    if (!pin) return errorResponse(res, 'PIN required', 400);
 
-    // Cache code mapping to gymId for manual check-ins
-    jtiCache.set(`code_${code}`, req.user.gymId, 40); // 40s expiry
+    const member = await Member.findOne({ 
+      $or: [{ accessPin: pin }, { memberId: pin.toUpperCase() }],
+      gymId: req.user.gymId,
+      isActive: true
+    }).populate('currentMembershipId');
 
-    return successResponse(res, { token, code, expiresIn: 30 });
-  } catch (error) { next(error); }
-};
+    if (!member) return errorResponse(res, 'Member not found or invalid PIN', 404);
 
-// @desc    Member scans Gym QR
-// @route   POST /api/v1/attendance/checkin
-// @access  Private (Member)
-const memberCheckin = async (req, res, next) => {
-  try {
-    const { token, code } = req.body;
-    if (!token && !code) return errorResponse(res, 'Token or Code required', 400);
-
-    let gymId;
-    if (token) {
-      const decoded = jwt.verify(token, process.env.QR_SECRET || process.env.JWT_SECRET);
-      if (decoded.purpose !== 'gym_checkin') return errorResponse(res, 'Invalid token purpose', 400);
-
-      // Replay protection
-      if (jtiCache.has(decoded.jti)) {
-        logger.warn(`Replay attack detected: ${decoded.jti} from user ${req.user._id}`);
-        return errorResponse(res, 'Token already used', 403);
-      }
-      jtiCache.set(decoded.jti, true);
-      gymId = decoded.gymId;
-    } else {
-      // Validate short code
-      const cachedGymId = jtiCache.get(`code_${code.toUpperCase()}`);
-      if (!cachedGymId) return errorResponse(res, 'Invalid or expired manual code', 400);
-      gymId = cachedGymId;
+    // Verify membership status
+    if (member.membershipStatus !== 'active') {
+      return errorResponse(res, `Membership ${member.membershipStatus}`, 403);
     }
 
-    const member = await Member.findOne({ userId: req.user._id });
-    if (!member) return errorResponse(res, 'Member profile not found', 404);
-
-    if (member.gymId.toString() !== gymId.toString()) {
-      return errorResponse(res, 'Unauthorized gym check-in', 403);
-    }
-
+    // Record attendance
     const attendance = await Attendance.create({
       memberId: member._id,
       gymId: member.gymId,
-      method: 'qr_scan_member',
+      method: 'pin_kiosk',
+      status: 'present'
     });
 
-    const isNewDay = await updateStreak(member);
-
-    logger.info(`Member check-in: ${member.fullName} at ${member.gymId}`);
-
-    return successResponse(res, { 
-      attendance, 
-      isNewDay, 
-      streak: member.streak 
-    }, 201);
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') return errorResponse(res, 'QR code expired', 400);
-    next(error);
-  }
-};
-
-// @desc    Staff scans Member QR
-// @route   POST /api/v1/attendance/qr-scan
-// @access  Private (Owner/Trainer)
-const qrCheckin = async (req, res, next) => {
-  try {
-    const { token } = req.body;
-    if (!token) return errorResponse(res, 'QR token required', 400);
-
-    // For now, let's assume the member's QR token is their memberId signed by the server
-    // or just their raw memberId if we want to keep it simple but less secure.
-    // Given the task, we should make it secure.
-    const decoded = jwt.verify(token, process.env.QR_SECRET || process.env.JWT_SECRET);
-    
-    // Replay protection
-    if (decoded.jti && jtiCache.has(decoded.jti)) {
-      return errorResponse(res, 'QR code already scanned', 403);
-    }
-    if (decoded.jti) jtiCache.set(decoded.jti, true);
-
-    const member = await Member.findById(decoded.memberId || decoded.id);
-    if (!member) return errorResponse(res, 'Member not found', 404);
-
-    if (member.gymId.toString() !== req.user.gymId.toString()) {
-      return errorResponse(res, 'Member not from this gym', 403);
-    }
-
-    if (member.membershipStatus === 'expired') {
-      return errorResponse(res, 'Membership expired', 403);
-    }
-
-    const attendance = await Attendance.create({
-      memberId: member._id,
-      gymId: req.user.gymId,
-      method: 'qr_scan_staff',
-      staffId: req.user._id
-    });
-
-    const isNewDay = await updateStreak(member);
-
-    logger.info(`Staff ${req.user._id} scanned member ${member._id}`);
+    // Update streak
+    await updateStreak(member);
 
     return successResponse(res, {
       attendance,
-      member,
-      isNewDay
-    });
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') return errorResponse(res, 'Member QR expired', 400);
-    next(error);
-  }
+      member: {
+        id: member._id,
+        firstName: member.firstName,
+        lastName: member.lastName,
+        photo: member.photo,
+        streak: member.streak,
+        memberId: member.memberId
+      }
+    }, 'Attendance recorded');
+  } catch (error) { next(error); }
 };
+
+
 
 // @desc    Manual check-in by staff
 // @route   POST /api/v1/attendance/manual
@@ -243,34 +164,93 @@ const getTodayAttendance = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-// @desc    Get member's own signed QR token (for staff to scan)
-// @route   GET /api/v1/attendance/member-qr
-// @access  Private (Member)
-const getMemberSignedQR = async (req, res, next) => {
+
+const selfCheckin = async (req, res, next) => {
+  try {
+    const member = await Member.findOne({ userId: req.user._id });
+
+    if (!member) return errorResponse(res, 'Member profile not found', 404);
+    if (member.membershipStatus !== 'active' && member.membershipStatus !== 'trial') {
+      return errorResponse(res, `Membership ${member.membershipStatus}`, 403);
+    }
+
+    const attendance = await Attendance.create({
+      memberId: member._id,
+      gymId: member.gymId,
+      method: 'qr_scan_member',
+      status: 'present'
+    });
+
+    await updateStreak(member);
+
+    return successResponse(res, { attendance, member }, 'Attendance marked successfully');
+  } catch (error) { next(error); }
+};
+
+const getMyAttendance = async (req, res, next) => {
   try {
     const member = await Member.findOne({ userId: req.user._id });
     if (!member) return errorResponse(res, 'Member profile not found', 404);
 
-    const token = jwt.sign(
-      { 
-        memberId: member._id,
-        purpose: 'member_id',
-        jti: uuidv4() 
-      },
-      process.env.QR_SECRET || process.env.JWT_SECRET,
-      { expiresIn: '10m' } // Member's own QR lasts longer
-    );
+    const { limit = 20 } = req.query;
+    const records = await Attendance.find({ memberId: member._id })
+      .sort({ checkedInAt: -1 })
+      .limit(Number(limit));
 
-    return successResponse(res, { token, expiresIn: 600 });
+    return successResponse(res, records);
+  } catch (error) { next(error); }
+};
+
+const getKioskPin = async (req, res, next) => {
+  try {
+    const gymIdStr = req.user.gymId.toString();
+    let currentPin = kioskPinCache.get(gymIdStr);
+    if (!currentPin) {
+      currentPin = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit PIN
+      kioskPinCache.set(gymIdStr, currentPin, 30);
+    }
+    return successResponse(res, { pin: currentPin });
+  } catch (error) { next(error); }
+};
+
+const dynamicPinCheckin = async (req, res, next) => {
+  try {
+    const { pin } = req.body;
+    if (!pin) return errorResponse(res, 'PIN is required', 400);
+
+    const member = await Member.findOne({ userId: req.user._id });
+    if (!member) return errorResponse(res, 'Member profile not found', 404);
+
+    const activePin = kioskPinCache.get(member.gymId.toString());
+    
+    if (!activePin || activePin !== pin.toString()) {
+      return errorResponse(res, 'Invalid or expired Kiosk PIN. Please check the screen.', 400);
+    }
+
+    if (member.membershipStatus !== 'active' && member.membershipStatus !== 'trial') {
+      return errorResponse(res, `Membership ${member.membershipStatus}`, 403);
+    }
+
+    const attendance = await Attendance.create({
+      memberId: member._id,
+      gymId: member.gymId,
+      method: 'dynamic_pin',
+      status: 'present'
+    });
+
+    await updateStreak(member);
+
+    return successResponse(res, { attendance, member }, 'Attendance marked successfully');
   } catch (error) { next(error); }
 };
 
 module.exports = { 
-  getRotatingToken, 
-  memberCheckin, 
-  qrCheckin, 
+  pinCheckin,
   manualCheckin, 
   getAttendance, 
   getTodayAttendance,
-  getMemberSignedQR
+  selfCheckin,
+  getMyAttendance,
+  getKioskPin,
+  dynamicPinCheckin
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 /**
  * CyberMatrix - A reusable high-fidelity background for the GymFlow Pro ecosystem.
@@ -13,7 +13,6 @@ const CyberMatrix = ({ opacity = 0.5, gridColor = 'rgba(255,255,255,0.03)' }) =>
       position: 'fixed',
       inset: 0,
       zIndex: -1,
-      background: '#000',
       overflow: 'hidden',
       pointerEvents: 'none'
     }}>

@@ -115,14 +115,20 @@ const getAttendanceChart = async (req, res, next) => {
 const getMemberAnalytics = async (req, res, next) => {
   try {
     const memberId = req.params.id;
+    const gymId = req.user.gymId;
+
+    // Security Check: Member must belong to this gym
+    const memberExists = await Member.findOne({ _id: memberId, gymId });
+    if (!memberExists) return errorResponse(res, 'Member not found in your gym', 404);
+
     const now = new Date();
     const startOfFourWeeksAgo = new Date(now);
     startOfFourWeeksAgo.setDate(now.getDate() - 28);
 
     const [attendance, workouts, metrics] = await Promise.all([
-      Attendance.find({ memberId, checkedInAt: { $gte: startOfFourWeeksAgo } }).sort({ checkedInAt: 1 }),
-      WorkoutLog.find({ memberId, date: { $gte: startOfFourWeeksAgo } }).sort({ date: 1 }),
-      Member.findById(memberId).select('currentMetrics')
+      Attendance.find({ memberId, gymId, checkedInAt: { $gte: startOfFourWeeksAgo } }).sort({ checkedInAt: 1 }),
+      WorkoutLog.find({ memberId, gymId, date: { $gte: startOfFourWeeksAgo } }).sort({ date: 1 }),
+      Member.findOne({ _id: memberId, gymId }).select('currentMetrics')
     ]);
 
     // Format for chart: grouped by week
@@ -145,4 +151,45 @@ const getMemberAnalytics = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-module.exports = { getDashboard, getRevenueChart, getAttendanceChart, getMemberAnalytics };
+// @route   GET /api/v1/analytics/muscle-focus
+const getMuscleGroupFocus = async (req, res, next) => {
+  try {
+    const gymId = req.user.gymId;
+    const days = Number(req.query.days) || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const data = await WorkoutLog.aggregate([
+      { $match: { gymId, date: { $gte: startDate } } },
+      { $unwind: "$exercises" },
+      {
+        $lookup: {
+          from: "exercises",
+          localField: "exercises.exerciseId",
+          foreignField: "_id",
+          as: "exerciseDetails"
+        }
+      },
+      { $unwind: "$exerciseDetails" },
+      { $unwind: "$exerciseDetails.primaryMuscle" },
+      {
+        $group: {
+          _id: "$exerciseDetails.primaryMuscle",
+          count: { $sum: 1 },
+          volume: { $sum: "$totalVolume" }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    return successResponse(res, data);
+  } catch (error) { next(error); }
+};
+
+module.exports = { 
+  getDashboard, 
+  getRevenueChart, 
+  getAttendanceChart, 
+  getMemberAnalytics,
+  getMuscleGroupFocus
+};

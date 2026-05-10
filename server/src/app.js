@@ -16,7 +16,9 @@ const badgeRoutes      = require('./routes/badge.routes');
 const progressRoutes   = require('./routes/progress.routes');
 const gymRoutes        = require('./routes/gym.routes');
 const dietPlanRoutes   = require('./routes/dietPlan.routes');
+const membershipRoutes = require('./routes/membership.routes');
 const notificationRoutes = require('./routes/notification.routes');
+const aiRoutes = require('./routes/ai.routes');
 const errorHandler = require('./middleware/error.middleware');
 const logger = require('./utils/logger');
 
@@ -62,7 +64,9 @@ app.use('/api/v1/badges',     badgeRoutes);
 app.use('/api/v1/progress',   progressRoutes);
 app.use('/api/v1/gym',        gymRoutes);
 app.use('/api/v1/diet-plans', dietPlanRoutes);
+app.use('/api/v1/memberships', membershipRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/ai', aiRoutes);
 
 // ─── 404 handler ─────────────────────────────────────────────
 app.use((req, res) => {

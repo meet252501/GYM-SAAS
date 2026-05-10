@@ -11,6 +11,7 @@ const memberSchema = new mongoose.Schema({
   dateOfBirth: Date,
   gender: { type: String, enum: ['male', 'female', 'other'] },
   photo: { type: String, default: '' },
+  accessPin: { type: String, unique: true, sparse: true },
 
   // Emergency
   emergencyContact: {
@@ -62,7 +63,20 @@ const memberSchema = new mongoose.Schema({
   totalWorkouts: { type: Number, default: 0 },
 
   joinedAt: { type: Date, default: Date.now },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+
+  // Settings
+  preferences: {
+    emailNotifications: { type: Boolean, default: true },
+    pushNotifications: { type: Boolean, default: true },
+    healthSync: { type: Boolean, default: false }
+  },
+
+  // AI Usage Tracking
+  aiUsage: {
+    dailyCount: { type: Number, default: 0 },
+    lastUsedDate: { type: String, default: () => new Date().toISOString().split('T')[0] }
+  }
 }, { timestamps: true });
 
 // Virtual full name
@@ -70,18 +84,31 @@ memberSchema.virtual('fullName').get(function () {
   return `${this.firstName} ${this.lastName}`;
 });
 
-// Auto-generate member ID
+// Auto-generate member ID and PIN
 memberSchema.pre('save', async function (next) {
-  if (this.isNew && !this.memberId) {
-    const count = await mongoose.model('Member').countDocuments({ gymId: this.gymId });
-    const year = new Date().getFullYear();
-    this.memberId = `GF-${year}-${String(count + 1).padStart(4, '0')}`;
+  if (this.isNew) {
+    if (!this.memberId) {
+      const count = await mongoose.model('Member').countDocuments({ gymId: this.gymId });
+      const year = new Date().getFullYear();
+      this.memberId = `GF-${year}-${String(count + 1).padStart(4, '0')}`;
+    }
+    
+    if (!this.accessPin) {
+      // Generate unique 4-digit PIN
+      let pin;
+      let exists = true;
+      while (exists) {
+        pin = Math.floor(1000 + Math.random() * 9000).toString();
+        const found = await mongoose.model('Member').findOne({ accessPin: pin });
+        if (!found) exists = false;
+      }
+      this.accessPin = pin;
+    }
   }
   next();
 });
 
 memberSchema.index({ gymId: 1, membershipStatus: 1 });
 memberSchema.index({ membershipExpiry: 1 });
-memberSchema.index({ memberId: 1 }, { unique: true });
 
 module.exports = mongoose.model('Member', memberSchema);

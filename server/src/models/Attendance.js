@@ -5,7 +5,7 @@ const attendanceSchema = new mongoose.Schema({
   gymId: { type: mongoose.Schema.Types.ObjectId, ref: 'Gym', required: true },
   method: { 
     type: String, 
-    enum: ['qr_scan', 'qr_scan_member', 'qr_scan_staff', 'manual', 'class_booking'], 
+    enum: ['qr_scan', 'qr_scan_member', 'qr_scan_staff', 'manual', 'class_booking', 'pin_kiosk'], 
     default: 'manual' 
   },
   checkedInAt: { type: Date, required: true, default: Date.now },

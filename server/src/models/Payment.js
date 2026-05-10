@@ -4,7 +4,7 @@ const paymentSchema = new mongoose.Schema({
   gymId: { type: mongoose.Schema.Types.ObjectId, ref: 'Gym', required: true },
   memberId: { type: mongoose.Schema.Types.ObjectId, ref: 'Member', required: true },
   memberName: String,
-  type: { type: String, enum: ['membership', 'class', 'product', 'refund'], default: 'membership' },
+  type: { type: String, enum: ['membership', 'class', 'product', 'refund', 'other'], default: 'membership' },
   amount: { type: Number, required: true },
   currency: { type: String, default: 'INR' },
   status: { type: String, enum: ['pending', 'completed', 'failed', 'refunded'], default: 'pending' },

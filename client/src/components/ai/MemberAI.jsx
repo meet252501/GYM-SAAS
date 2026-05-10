@@ -1,15 +1,13 @@
 /**
  * MemberAI — Compact GymCoach chat bubble for members
- * Plan-gated: Trial=3, Basic=10, Premium=30, Elite=∞
- * Groq primary · Gemini backup · offline rule engine
+ * Plan-gated via Backend Tracking
  */
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dumbbell, X, Send, Lock, Crown, Star, Zap } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import {
-  sendAIMessage, buildMemberPrompt,
-  canSendMessage, incrementUsage, PLAN_LIMITS,
+  sendAIMessage, buildMemberPrompt, useAIUsage
 } from '../../hooks/useGymAI';
 
 const QUICK_ACTIONS = [
@@ -66,8 +64,7 @@ function UsageBar({ used, limit }) {
 }
 
 function UpgradePrompt({ plan }) {
-  const next = UPGRADE_FOR[plan];
-  const nextLimit = PLAN_LIMITS[next];
+  const next = UPGRADE_FOR[plan] || 'Premium';
   return (
     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
       style={{ margin: '8px 14px', padding: '14px', borderRadius: 14,
@@ -76,8 +73,7 @@ function UpgradePrompt({ plan }) {
       <Lock size={20} color="var(--primary)" style={{ margin: '0 auto 6px' }} />
       <div style={{ fontWeight: 800, fontSize: '0.85rem', marginBottom: 4 }}>Daily limit reached</div>
       <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginBottom: 10 }}>
-        Upgrade to <strong style={{ color: 'var(--primary)' }}>{next}</strong> for{' '}
-        {nextLimit === Infinity ? 'unlimited' : `${nextLimit} messages`}/day
+        Upgrade to <strong style={{ color: 'var(--primary)' }}>{next}</strong> for more daily messages.
       </div>
       <button className="btn btn-primary btn-sm" style={{ width: '100%', fontSize: '0.78rem' }}>
         Upgrade to {next} ↗
@@ -88,9 +84,7 @@ function UpgradePrompt({ plan }) {
 
 export default function MemberAI() {
   const { user } = useAuthStore();
-  const plan      = user?.membershipPlan || 'Basic';
-  const userId    = user?._id || 'guest';
-  const limit     = PLAN_LIMITS[plan] ?? 10;
+  const { dailyCount, limit, remaining, planName, refreshUsage } = useAIUsage();
 
   const [open, setOpen]     = useState(false);
   const [messages, setMessages] = useState([{
@@ -99,31 +93,20 @@ export default function MemberAI() {
   }]);
   const [input, setInput]   = useState('');
   const [loading, setLoading] = useState(false);
-  const [usageCount, setUsageCount] = useState(() => {
-    try {
-      const raw = localStorage.getItem(`gymflow_ai_usage_${userId}`);
-      if (!raw) return 0;
-      const d = JSON.parse(raw);
-      const today = new Date().toISOString().split('T')[0];
-      return d.date === today ? (d.count || 0) : 0;
-    } catch { return 0; }
-  });
+  
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
   useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 300); }, [open]);
 
-  const locked = !canSendMessage(userId, plan, 'member');
+  const locked = remaining <= 0 && limit !== Infinity;
   const systemMsg = { role: 'system', content: buildMemberPrompt(user) };
 
   async function send(text) {
     const userText = (text || input).trim();
     if (!userText || loading || locked) return;
     setInput('');
-
-    incrementUsage(userId);
-    setUsageCount(c => c + 1);
 
     const userMsg = { role: 'user', content: userText };
     const history = [...messages, userMsg];
@@ -133,6 +116,7 @@ export default function MemberAI() {
     try {
       const reply = await sendAIMessage([systemMsg, ...history.slice(-6)]);
       setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+      await refreshUsage();
     } catch {
       setMessages(prev => [...prev, { role: 'assistant', content: '⚡ Connection issue, try again shortly!' }]);
     } finally {
@@ -140,7 +124,7 @@ export default function MemberAI() {
     }
   }
 
-  const PlanIcon = PLAN_ICON[plan] || Zap;
+  const PlanIcon = PLAN_ICON[planName] || Zap;
 
   return (
     <>
@@ -197,7 +181,7 @@ export default function MemberAI() {
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>GymCoach AI</div>
                 <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <PlanIcon size={10} /> {plan} · {limit === Infinity ? 'Unlimited' : `${Math.max(0, limit - usageCount)} msgs left`}
+                  <PlanIcon size={10} /> {planName} · {limit === Infinity ? 'Unlimited' : `${Math.max(0, limit - dailyCount)} msgs left`}
                 </div>
               </div>
               <button onClick={() => setOpen(false)}
@@ -207,7 +191,7 @@ export default function MemberAI() {
             </div>
 
             {/* Usage bar */}
-            <UsageBar used={usageCount} limit={limit} />
+            <UsageBar used={dailyCount} limit={limit} />
 
             {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 }} className="no-scrollbar">
@@ -230,7 +214,7 @@ export default function MemberAI() {
             </div>
 
             {/* Locked state */}
-            {locked && <UpgradePrompt plan={plan} />}
+            {locked && <UpgradePrompt plan={planName} />}
 
             {/* Quick actions (first visit only) */}
             {!locked && messages.length <= 1 && (

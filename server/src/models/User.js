@@ -4,12 +4,17 @@ const bcrypt = require('bcryptjs');
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   passwordHash: { type: String, required: true },
-  role: { type: String, enum: ['owner', 'trainer', 'member'], default: 'member' },
+  role: { type: String, enum: ['superadmin', 'owner', 'trainer', 'member'], default: 'member' },
   gymId: { type: mongoose.Schema.Types.ObjectId, ref: 'Gym' },
   isActive: { type: Boolean, default: true },
   lastLogin: Date,
   refreshToken: String,
-  fcmToken: String
+  fcmToken: String,
+
+  // ─── Trainer Invite ───────────────────────────────────────────
+  inviteToken: String,
+  inviteTokenExpiry: Date,
+  isInvitePending: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // Hash password before save
@@ -29,6 +34,7 @@ userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.passwordHash;
   delete obj.refreshToken;
+  delete obj.inviteToken;
   return obj;
 };
 

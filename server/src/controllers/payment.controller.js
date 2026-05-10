@@ -1,5 +1,7 @@
 const Payment = require('../models/Payment');
 const Member = require('../models/Member');
+const Gym = require('../models/Gym');
+const InvoiceService = require('../services/invoice.service');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const logger = require('../utils/logger');
 
@@ -37,8 +39,12 @@ const recordPayment = async (req, res, next) => {
   try {
     const { memberId, amount, type, gateway, notes, paidAt } = req.body;
 
-    const member = await Member.findById(memberId);
-    if (!member) return errorResponse(res, 'Member not found', 404);
+    if (!amount || amount <= 0) {
+      return errorResponse(res, 'Payment amount must be a positive number', 400);
+    }
+
+    const member = await Member.findOne({ _id: memberId, gymId: req.user.gymId });
+    if (!member) return errorResponse(res, 'Member not found in your gym', 404);
 
     const payment = await Payment.create({
       gymId: req.user.gymId,
@@ -89,8 +95,36 @@ const getPaymentStats = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// @desc    Download PDF Invoice
+// @route   GET /api/v1/payments/:id/invoice
+// @access  Private
+const downloadInvoice = async (req, res, next) => {
+  try {
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) return errorResponse(res, 'Payment record not found', 404);
+
+    // Security check: Only staff of the same gym or the member themselves can download
+    if (req.user.role === 'member') {
+      const member = await Member.findOne({ userId: req.user._id });
+      if (!member || member._id.toString() !== payment.memberId.toString()) {
+        return errorResponse(res, 'Unauthorized access to invoice', 403);
+      }
+    } else if (payment.gymId.toString() !== req.user.gymId.toString()) {
+      return errorResponse(res, 'Unauthorized access to gym invoice', 403);
+    }
+
+    const gym = await Gym.findById(payment.gymId);
+    const pdfBuffer = await InvoiceService.generateInvoice(payment, gym || {});
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Invoice-${payment._id}.pdf`);
+    return res.send(pdfBuffer);
+  } catch (error) { next(error); }
+};
+
 module.exports = {
   getPayments,
   recordPayment,
-  getPaymentStats
+  getPaymentStats,
+  downloadInvoice
 };

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Users, UserPlus, CreditCard, Activity, Flame, AlertTriangle, 
-  ArrowUpRight, TrendingUp, Calendar, Crown, Loader2
+  ArrowUpRight, TrendingUp, Calendar, Crown, Loader2, Smartphone
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { StreakBadge } from '../../components/ui/Badges';
@@ -120,9 +120,9 @@ export default function Dashboard() {
       type: dashboardData?.revenue?.growth >= 0 ? 'up' : 'down' 
     },
     { 
-      label: 'Today Entry', 
+      label: 'Kiosk Entries', 
       value: `${dashboardData?.attendance?.today || 0}`, 
-      icon: Activity, color: 'var(--danger)', 
+      icon: Smartphone, color: 'var(--danger)', 
       trend: 'Live', type: 'up' 
     },
   ];
@@ -139,7 +139,7 @@ export default function Dashboard() {
             System Overview
           </h1>
           <p style={{ color: 'var(--text-3)', fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Activity size={14} color="var(--success)" /> Live analytical feed of GymFlow operations
+            <Activity size={14} color="var(--success)" /> Live feed of Member Check-ins
           </p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>

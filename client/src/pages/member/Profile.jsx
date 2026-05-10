@@ -1,326 +1,266 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, CreditCard, Bell, Shield, Heart, ChevronRight, Save, CheckCircle, Edit2, Camera } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { 
+  LogOut, Bell, Shield, Heart, ChevronRight, 
+  Save, Camera, Zap, CheckCircle,
+  Lock, Trash2, Mail, Ruler, Activity, Loader2
+} from 'lucide-react';
 import useAuthStore from '../../store/authStore';
-import BadgeShowcase from '../../components/ui/BadgeShowcase';
+import { authApi } from '../../api';
 import CyberMatrix from '../../components/ui/CyberMatrix';
+import BackButton from '../../components/ui/BackButton';
+import toast from 'react-hot-toast';
 
 const containerVariants = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
+
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 20 } }
 };
 
-// Toggle switch
-function Toggle({ value, onChange }) {
-  return (
-    <motion.div
-      onClick={() => onChange(!value)}
-      style={{
-        width: 46, height: 25, borderRadius: 13,
-        background: value ? 'var(--success)' : 'var(--surface-4, var(--surface-3))',
-        padding: 3, cursor: 'pointer', display: 'flex', alignItems: 'center',
-        transition: 'background 0.2s'
-      }}
-    >
-      <motion.div
-        animate={{ x: value ? 21 : 0 }}
-        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-        style={{ width: 19, height: 19, borderRadius: '50%', background: 'white', boxShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
-      />
-    </motion.div>
-  );
-}
-
-// Generic expandable row
-function SettingsRow({ icon, label, iconClass, children, isToggle, toggleValue, onToggle }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div>
-      <button
-        onClick={() => isToggle ? onToggle(!toggleValue) : setExpanded(e => !e)}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '16px 20px', background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid var(--border)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div className={iconClass}>{icon}</div>
-          <span style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: '0.95rem' }}>{label}</span>
-        </div>
-        {isToggle
-          ? <Toggle value={toggleValue} onChange={onToggle} />
-          : (
-            <motion.div animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.2 }}>
-              <ChevronRight size={18} style={{ color: 'var(--text-3)' }} />
-            </motion.div>
-          )
-        }
-      </button>
-
-      <AnimatePresence>
-        {!isToggle && expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            style={{ overflow: 'hidden' }}
-          >
-            <div style={{ padding: '16px 20px 20px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)' }}>
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// Save toast
-function Toast({ msg }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      style={{
-        position: 'fixed', top: 80, right: 20, zIndex: 200,
-        background: 'var(--success)', color: 'white',
-        padding: '10px 18px', borderRadius: 16, fontWeight: 700,
-        display: 'flex', alignItems: 'center', gap: 8,
-        boxShadow: '0 8px 24px rgba(16,185,129,0.5)'
-      }}
-    >
-      <CheckCircle size={16} /> {msg}
-    </motion.div>
-  );
-}
-
 export default function Profile() {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
-  const [toast, setToast] = useState(null);
-  const [notifications, setNotifications] = useState({ email: true, push: true, class: false });
-  const [healthSync, setHealthSync] = useState(true);
-  const fullName = `${user?.firstName || 'Alex'} ${user?.lastName || 'Johnson'}`;
-  const [editProfile, setEditProfile] = useState({ name: fullName, email: user?.email || 'member@gymflowpro.com', weight: user?.weight ? String(user.weight) : '76', height: user?.height ? String(user.height) : '180' });
+  const { user, logout, updateUser } = useAuthStore();
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [activeTab, setActiveTab] = useState('Account');
+  const fileInputRef = useRef(null);
 
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  }
+  const [editProfile, setEditProfile] = useState(() => ({ 
+    name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Member Alpha' : 'Member Alpha', 
+    email: user?.email || '', 
+    weight: user?.weight !== undefined ? String(user.weight) : '76', 
+    height: user?.height !== undefined ? String(user.height) : '180' 
+  }));
 
-  function handleSave() {
+  const handleSave = async () => {
     setSaving(true);
-    setTimeout(() => { setSaving(false); showToast('Profile updated!'); }, 900);
-  }
+    try {
+      const names = editProfile.name.trim().split(' ');
+      const firstName = names[0];
+      const lastName = names.slice(1).join(' ') || ' ';
+      
+      const res = await authApi.updateMe({
+        firstName, lastName,
+        weight: parseFloat(editProfile.weight),
+        height: parseFloat(editProfile.height)
+      });
+      
+      updateUser(res.data.data.user);
+      toast.success('Core Profile Synchronized');
+    } catch {
+      toast.error('Sync Failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('File size must be under 2MB');
+      return;
+    }
+
+    setUploadingPhoto(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Data = reader.result;
+        try {
+          const res = await authApi.updateMe({ photo: base64Data });
+          updateUser({ photo: res.data.data.user.photo });
+          toast.success('Neural Signature Updated');
+        } catch {
+          toast.error('Upload Failed');
+        } finally {
+          setUploadingPhoto(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setUploadingPhoto(false);
+      toast.error('Read Failed');
+    }
+  };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
-    >
-      <AnimatePresence>{toast && <Toast msg={toast} />}</AnimatePresence>
-
-      {/* ── Avatar Hero ────────────────────────────────────── */}
-      <motion.div variants={itemVariants} style={{ textAlign: 'center', marginTop: 16 }}>
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-          <div style={{
-            width: 100, height: 100, borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--primary), var(--danger))', padding: '3px'
-          }}>
-            <img
-              src="https://i.pravatar.cc/150?img=11"
-              alt="Profile"
-              style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--bg)' }}
-            />
-          </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => showToast('Photo upload coming soon!')}
-            style={{
-              position: 'absolute', bottom: 0, right: 0,
-              width: 30, height: 30, borderRadius: '50%',
-              background: 'var(--primary)', border: '3px solid var(--bg)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer'
-            }}
-          >
-            <Camera size={13} color="white" />
-          </motion.button>
-        </div>
-        <h2 style={{ fontSize: '1.8rem', marginTop: 14, marginBottom: 4 }}>{editProfile.name}</h2>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', marginTop: 4 }}>
-          <p className="badge badge-epic" style={{ margin: 0, padding: '4px 12px' }}>{user?.membershipPlan || 'Premium'} Member</p>
-          {user?.streak > 0 && <p style={{ margin: 0, padding: '4px 12px', background: 'rgba(245,158,11,0.15)', borderRadius: 20, fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)' }}>🔥 {user.streak} day streak</p>}
-          <p style={{ margin: 0, padding: '4px 12px', background: 'rgba(99,102,241,0.15)', borderRadius: 20, fontSize: '0.8rem', fontWeight: 700, color: '#818cf8' }}>💪 {user?.totalWorkouts || 0} workouts</p>
-        </div>
-      </motion.div>
-
-      {/* ── Stats ─────────────────────────────────────────── */}
-      <motion.div variants={itemVariants} className="grid-2">
-        <div className="card-glass" style={{ padding: '16px', textAlign: 'center' }}>
-          <div className="text-faint text-sm">Weight</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>{editProfile.weight}<span style={{ fontSize: '0.9rem', color: 'var(--text-3)' }}>kg</span></div>
-        </div>
-        <div className="card-glass" style={{ padding: '16px', textAlign: 'center' }}>
-          <div className="text-faint text-sm">Height</div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>{editProfile.height}<span style={{ fontSize: '0.9rem', color: 'var(--text-3)' }}>cm</span></div>
-        </div>
-      </motion.div>
-
-      {/* ── Badges ────────────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <BadgeShowcase earnedBadges={user?.badges || []} />
-      </motion.div>
-
-      {/* ── Settings Rows ─────────────────────────────────── */}
-      <motion.div variants={itemVariants}>
-        <h3 className="text-faint" style={{ fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: 12, fontWeight: 700 }}>Account</h3>
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-
-          {/* Account Preferences — editable form */}
-          <SettingsRow
-            icon={<Edit2 size={18} />}
-            label="Edit Profile"
-            iconClass="text-primary"
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Full Name</label>
-                  <input className="form-input" value={editProfile.name} onChange={e => setEditProfile(f => ({ ...f, name: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Email</label>
-                  <input className="form-input" type="email" value={editProfile.email} onChange={e => setEditProfile(f => ({ ...f, email: e.target.value }))} />
-                </div>
+    <div className="mobile-px-4" style={{ position: 'relative', minHeight: '100vh', padding: '24px 16px 120px' }}>
+      <CyberMatrix intensity={0.03} />
+      
+      <motion.div variants={containerVariants} initial="hidden" animate="show" style={{ maxWidth: 800, margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <BackButton />
+        
+        {/* Profile Hero */}
+        <motion.div variants={itemVariants} className="glass-card-premium mobile-p-5" style={{ padding: '40px 32px', textAlign: 'center', borderRadius: 40, marginBottom: 32, position: 'relative', overflow: 'hidden' }}>
+           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: 'linear-gradient(90deg, var(--primary), #8b5cf6, var(--primary))', opacity: 0.5 }} />
+           
+           <div style={{ position: 'relative', display: 'inline-block', marginBottom: 24 }}>
+              <div style={{ width: 120, height: 120, borderRadius: '50%', padding: 4, background: 'linear-gradient(135deg, var(--primary), #8b5cf6)', boxShadow: '0 0 40px rgba(139,92,246,0.3)', position: 'relative' }}>
+                 <img src={user?.photo || "https://i.pravatar.cc/150?img=11"} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', border: '6px solid rgba(0,0,0,0.8)', opacity: uploadingPhoto ? 0.3 : 1 }} />
+                 {uploadingPhoto && (
+                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Loader2 className="animate-spin" color="var(--primary)" size={32} />
+                   </div>
+                 )}
               </div>
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Weight (kg)</label>
-                  <input className="form-input" type="number" value={editProfile.weight} onChange={e => setEditProfile(f => ({ ...f, weight: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Height (cm)</label>
-                  <input className="form-input" type="number" value={editProfile.height} onChange={e => setEditProfile(f => ({ ...f, height: e.target.value }))} />
-                </div>
-              </div>
-              <motion.button whileTap={{ scale: 0.95 }} className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving} style={{ alignSelf: 'flex-end' }}>
-                {saving ? <span className="spinner" style={{ width: 12, height: 12 }} /> : <Save size={13} />}
-                {saving ? 'Saving...' : 'Save Changes'}
-              </motion.button>
-            </div>
-          </SettingsRow>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="glass-card-premium" 
+                style={{ position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}>
+                 <Camera size={16} />
+              </button>
+              <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handlePhotoUpload} />
+           </div>
 
-          {/* Notifications */}
-          <SettingsRow icon={<Bell size={18} />} label="Notifications" iconClass="text-info">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {[
-                { key: 'email', label: 'Email Alerts', desc: 'Class confirmations & receipts' },
-                { key: 'push', label: 'Push Notifications', desc: 'Real-time reminders' },
-                { key: 'class', label: 'Class Full Alerts', desc: 'When a class reaches capacity' },
-              ].map(item => (
-                <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{item.label}</div>
-                    <div style={{ color: 'var(--text-3)', fontSize: '0.75rem' }}>{item.desc}</div>
-                  </div>
-                  <Toggle value={notifications[item.key]} onChange={v => setNotifications(n => ({ ...n, [item.key]: v }))} />
-                </div>
-              ))}
-            </div>
-          </SettingsRow>
+           <h2 className="mobile-text-2xl" style={{ fontSize: '2.2rem', fontWeight: 900, margin: '0 0 8px' }}>{editProfile.name}</h2>
+           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', alignItems: 'center' }}>
+              <span className="badge-epic" style={{ fontSize: '0.7rem', letterSpacing: 1.5, padding: '6px 16px' }}>{user?.membershipPlan?.toUpperCase() || 'PREMIUM'} PROTOCOL</span>
+              <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)' }} />
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-3)', fontWeight: 600 }}>Active since 2024</span>
+           </div>
+        </motion.div>
 
-          {/* Billing */}
-          <SettingsRow icon={<CreditCard size={18} />} label="Billing & Plan" iconClass="text-success">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: 'var(--surface-3)', borderRadius: 12 }}>
-                <div>
-                  <div style={{ fontWeight: 700 }}>Premium Plan</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-3)' }}>Renews June 1, 2025 • $120/mo</div>
-                </div>
-                <span className="badge badge-active">Active</span>
-              </div>
+        {/* Biometric Bento */}
+        <div className="grid-3" style={{ marginBottom: 32 }}>
+           {[
+             { label: 'Weight', value: editProfile.weight, unit: 'kg', icon: <Activity size={18} />, color: 'var(--primary)' },
+             { label: 'Height', value: editProfile.height, unit: 'cm', icon: <Ruler size={18} />, color: '#8b5cf6' },
+             { label: 'Streak', value: user?.streak || 0, unit: 'days', icon: <Zap size={18} />, color: '#f59e0b' }
+           ].map((stat, i) => (
+             <motion.div key={i} variants={itemVariants} className="glass-card-premium" style={{ padding: 24, textAlign: 'center', borderRadius: 24 }}>
+                <div style={{ color: stat.color, marginBottom: 12, display: 'flex', justifyContent: 'center' }}>{stat.icon}</div>
+                <div style={{ fontSize: '1.6rem', fontWeight: 900 }}>{stat.value}<span style={{ fontSize: '0.8rem', color: 'var(--text-4)', marginLeft: 2 }}>{stat.unit}</span></div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', fontWeight: 800, textTransform: 'uppercase', marginTop: 4 }}>{stat.label}</div>
+             </motion.div>
+           ))}
+        </div>
+
+        {/* Navigation Tabs */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 24, background: 'rgba(255,255,255,0.02)', padding: 6, borderRadius: 20, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+           {['Account', 'Membership', 'Preferences', 'Security'].map(tab => (
+             <button key={tab} onClick={() => setActiveTab(tab)} 
+               style={{ 
+                 flex: 1, padding: '12px', borderRadius: 16, border: 'none', cursor: 'pointer',
+                 background: activeTab === tab ? 'rgba(255,255,255,0.08)' : 'transparent',
+                 color: activeTab === tab ? 'white' : 'var(--text-3)',
+                 fontWeight: 800, fontSize: '0.85rem', transition: '0.2s'
+               }}>
+               {tab}
+             </button>
+           ))}
+        </div>
+
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+           <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               
-              <div style={{ marginTop: '8px' }}>
-                <h4 style={{ fontSize: '0.9rem', marginBottom: '8px', color: 'var(--text-2)' }}>Payment History</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {[
-                    { id: 'INV-004', date: 'May 03, 2025', amount: 120, status: 'Paid' },
-                    { id: 'INV-001', date: 'Apr 03, 2025', amount: 120, status: 'Paid' },
-                    { id: 'CASH-992', date: 'Mar 03, 2025', amount: 120, status: 'Paid' },
-                  ].map(tx => (
-                    <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{tx.id}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{tx.date}</div>
+              {activeTab === 'Account' && (
+                <div className="glass-card-premium mobile-p-5" style={{ padding: 32, borderRadius: 32 }}>
+                   <div className="grid-2" style={{ marginBottom: 32 }}>
+                      <div className="form-group">
+                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)', marginBottom: 8, display: 'block' }}>IDENTITY</label>
+                         <input className="form-input" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 16 }} value={editProfile.name} onChange={e => setEditProfile(p => ({...p, name: e.target.value}))} />
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>${tx.amount}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>{tx.status}</div>
+                      <div className="form-group">
+                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)', marginBottom: 8, display: 'block' }}>EMAIL LINK</label>
+                         <input className="form-input" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 16 }} value={editProfile.email} readOnly />
                       </div>
-                    </div>
-                  ))}
+                      <div className="form-group">
+                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)', marginBottom: 8, display: 'block' }}>BODY MASS (KG)</label>
+                         <input className="form-input" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 16 }} type="number" value={editProfile.weight} onChange={e => setEditProfile(p => ({...p, weight: e.target.value}))} />
+                      </div>
+                      <div className="form-group">
+                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)', marginBottom: 8, display: 'block' }}>VERTICAL (CM)</label>
+                         <input className="form-input" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 16 }} type="number" value={editProfile.height} onChange={e => setEditProfile(p => ({...p, height: e.target.value}))} />
+                      </div>
+                   </div>
+                   <button onClick={handleSave} disabled={saving} className="btn-primary" style={{ width: '100%', padding: 20, borderRadius: 20 }}>
+                      {saving ? <Loader2 className="animate-spin" /> : <><Save size={18} /> SYNCHRONIZE IDENTITY</>}
+                   </button>
                 </div>
-              </div>
-            </div>
-          </SettingsRow>
+              )}
 
-          {/* Privacy & Security */}
-          <SettingsRow icon={<Shield size={18} />} label="Privacy & Security" iconClass="text-warning">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {['Change Password', 'Two-Factor Authentication', 'Download My Data', 'Delete Account'].map((item, i) => (
-                <motion.button
-                  key={i}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => showToast(`${item} — coming soon`)}
-                  style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '10px 14px', background: 'var(--surface-3)', border: i === 3 ? '1px solid rgba(239,68,68,0.2)' : 'none',
-                    borderRadius: 10, cursor: 'pointer', color: i === 3 ? 'var(--danger)' : 'var(--text-1)', fontWeight: 600, fontSize: '0.9rem'
-                  }}
-                >
-                  {item}
-                  <ChevronRight size={16} style={{ opacity: 0.5 }} />
-                </motion.button>
-              ))}
-            </div>
-          </SettingsRow>
+              {activeTab === 'Membership' && (
+                <div className="glass-card-premium mobile-p-5" style={{ padding: 32, borderRadius: 32 }}>
+                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                      <div>
+                         <h4 style={{ fontSize: '1.4rem', fontWeight: 900, margin: '0 0 4px' }}>Elite Membership</h4>
+                         <p style={{ margin: 0, color: 'var(--text-3)', fontSize: '0.9rem' }}>Renews on June 15, 2024</p>
+                      </div>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 900 }}>$120<span style={{ fontSize: '0.8rem', color: 'var(--text-4)' }}>/mo</span></div>
+                   </div>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {['Full Gym Access', 'AI Personal Coach', 'Premium Nutrition Planning', 'Guest Passes (2/mo)'].map(perk => (
+                        <div key={perk} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', background: 'rgba(255,255,255,0.02)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
+                           <CheckCircle size={16} color="var(--success)" />
+                           <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>{perk}</span>
+                        </div>
+                      ))}
+                   </div>
+                   <button className="btn-secondary" style={{ width: '100%', marginTop: 32, padding: 20, borderRadius: 20 }}>MANAGE SUBSCRIPTION</button>
+                </div>
+              )}
 
-          {/* Health Sync — toggle only */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <Heart size={18} className="text-danger" />
-              <div>
-                <span style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: '0.95rem' }}>Apple Health Sync</span>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{healthSync ? 'Syncing workouts & calories' : 'Sync disabled'}</div>
-              </div>
-            </div>
-            <Toggle value={healthSync} onChange={setHealthSync} />
-          </div>
-        </div>
-      </motion.div>
+              {activeTab === 'Preferences' && (
+                <div className="glass-card-premium mobile-p-5" style={{ padding: 32, borderRadius: 32 }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                      {[
+                        { icon: <Bell size={20} />, label: 'Push Notifications', desc: 'Alerts for upcoming classes & goals', active: true },
+                        { icon: <Mail size={20} />, label: 'Email Reports', desc: 'Weekly progress and metabolic insights', active: false },
+                        { icon: <Heart size={20} />, label: 'Apple Health Sync', desc: 'Synchronize biometric data automatically', active: true },
+                      ].map((pref, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                              <div style={{ color: 'var(--primary)' }}>{pref.icon}</div>
+                              <div>
+                                 <div style={{ fontWeight: 800, fontSize: '1rem' }}>{pref.label}</div>
+                                 <div style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>{pref.desc}</div>
+                              </div>
+                           </div>
+                           <div style={{ width: 44, height: 24, borderRadius: 12, background: pref.active ? 'var(--primary)' : 'rgba(255,255,255,0.1)', padding: 4, cursor: 'pointer' }}>
+                              <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', marginLeft: pref.active ? 20 : 0, transition: '0.2s' }} />
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+                </div>
+              )}
 
-      {/* ── Sign Out ──────────────────────────────────────── */}
-      <motion.div variants={itemVariants} style={{ paddingBottom: 24 }}>
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={async () => { await logout(); navigate('/login'); }}
-          className="btn btn-danger btn-block"
-          style={{ padding: '16px', borderRadius: '16px', fontSize: '1.05rem' }}
-        >
-          <LogOut size={20} /> Sign Out
+              {activeTab === 'Security' && (
+                <div className="glass-card-premium mobile-p-5" style={{ padding: 32, borderRadius: 32 }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <button className="btn-secondary" style={{ width: '100%', padding: 20, borderRadius: 20, display: 'flex', justifyContent: 'space-between' }}>
+                         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><Lock size={18} /> Update Access Key</div>
+                         <ChevronRight size={18} />
+                      </button>
+                      <button className="btn-secondary" style={{ width: '100%', padding: 20, borderRadius: 20, display: 'flex', justifyContent: 'space-between' }}>
+                         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><Shield size={18} /> 2FA Authentication</div>
+                         <ChevronRight size={18} />
+                      </button>
+                      <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '8px 0' }} />
+                      <button className="btn-secondary" style={{ width: '100%', padding: 20, borderRadius: 20, color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                         <Trash2 size={18} /> TERMINATE ACCOUNT
+                      </button>
+                   </div>
+                </div>
+              )}
+
+           </motion.div>
+        </AnimatePresence>
+
+        {/* Sign Out */}
+        <motion.button variants={itemVariants} whileTap={{ scale: 0.98 }} onClick={logout} 
+          style={{ width: '100%', marginTop: 32, padding: 20, borderRadius: 24, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: 'var(--danger)', fontWeight: 900, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+           <LogOut size={20} /> SIGN OUT OF PROTOCOL
         </motion.button>
+
       </motion.div>
-    </motion.div>
+    </div>
   );
 }

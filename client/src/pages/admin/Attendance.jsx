@@ -1,13 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Clock, Crown, Star, Zap, Search, X, QrCode, Camera, Loader2, 
+  Clock, Crown, Star, Zap, Search, X, Smartphone, 
   MapPin, Activity, ShieldCheck, Users, RefreshCw, Calendar
 } from 'lucide-react';
 import { attendanceApi } from '../../api';
 import Avatar from '../../components/ui/Avatar';
-import { Html5Qrcode } from 'html5-qrcode';
-import { QRCodeSVG } from 'qrcode.react';
 import { DotLottiePlayer } from '@dotlottie/react-player';
 import toast from 'react-hot-toast';
 import CyberMatrix from '../../components/ui/CyberMatrix';
@@ -17,7 +15,6 @@ const PLAN = {
   Elite:   { color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)',  Icon: Crown, shadow: 'rgba(245,158,11,0.5)' },
   Premium: { color: '#A855F7', bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.4)',  Icon: Star,  shadow: 'rgba(168,85,247,0.5)' },
   Basic:   { color: '#3B82F6', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.3)',  Icon: Zap,   shadow: 'rgba(59,130,246,0.3)' },
-  Trial:   { color: '#10B981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)',  Icon: Zap,   shadow: 'rgba(16,185,129,0.3)' },
 };
 const getPlan = p => PLAN[p] || PLAN.Basic;
 
@@ -84,7 +81,7 @@ function CheckInBanner({ member, onDismiss }) {
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-3)' }}>
-            <Activity size={14} /> Streak: 12 Days
+            <Activity size={14} /> Streak: {member.streak?.current || 0} Days
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', color: 'var(--text-3)' }}>
             <Calendar size={14} /> Exp: {member.membershipExpiry ? new Date(member.membershipExpiry).toLocaleDateString() : 'N/A'}
@@ -122,7 +119,7 @@ function LogEntry({ entry }) {
       <div style={{ flex: 1 }}>
         <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff' }}>{name}</div>
         <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 4 }}>
-           <cfg.Icon size={12} color={cfg.color} /> {member.membershipPlan} &nbsp;·&nbsp; {entry.method.replace('_', ' ')}
+           <cfg.Icon size={12} color={cfg.color} /> {member.membershipPlan || 'Basic'} &nbsp;·&nbsp; {entry.method.replace('_', ' ')}
         </div>
       </div>
       <div style={{ textAlign: 'right' }}>
@@ -141,10 +138,6 @@ export default function Attendance() {
   const [todayCount, setTodayCount] = useState(0);
   const [nowIn, setNowIn]           = useState(0);
   const [scanInput, setScanInput]   = useState('');
-  const [scanMode, setScanMode]       = useState('display');
-  const html5QrCodeRef                = useRef(null);
-  const [gymToken, setGymToken]       = useState('');
-  const [timeLeft, setTimeLeft]       = useState(30);
   const lastSeenIdRef                 = useRef(null);
 
   const fetchToday = useCallback(async () => {
@@ -154,7 +147,7 @@ export default function Attendance() {
         const newRecords = data.data || [];
         setLog(newRecords);
         setTodayCount(newRecords.length);
-        if (scanMode === 'display' && newRecords.length > 0) {
+        if (newRecords.length > 0) {
           const latest = newRecords[0];
           if (lastSeenIdRef.current && latest._id !== lastSeenIdRef.current) {
             const checkInTime = new Date(latest.checkedInAt);
@@ -164,43 +157,13 @@ export default function Attendance() {
             }
           }
           lastSeenIdRef.current = latest._id;
-        } else if (newRecords.length > 0) {
-          lastSeenIdRef.current = newRecords[0]._id;
         }
-        setNowIn(Math.floor(newRecords.length * 0.42));
-      }
-    } catch (err) { console.error(err); }
-  }, [scanMode]);
-
-  const fetchGymToken = useCallback(async () => {
-    try {
-      const { data } = await attendanceApi.getGymQR();
-      if (data.success) {
-        setGymToken(data.data.token);
-        setTimeLeft(30);
+        // Real count: Members who have checked in but not yet checked out
+        const activeCount = newRecords.filter(r => !r.checkedOutAt).length;
+        setNowIn(activeCount || 0);
       }
     } catch (err) { console.error(err); }
   }, []);
-
-  const stopCameraScanner = () => {
-    if (html5QrCodeRef.current?.isScanning) {
-      html5QrCodeRef.current.stop().finally(() => { html5QrCodeRef.current = null; });
-    }
-  };
-
-  const handleDecodedQR = useCallback(async (token) => {
-    if (!token) return;
-    try {
-      const res = token.split('.').length === 3 
-        ? await attendanceApi.qrScan(token) 
-        : await attendanceApi.manual({ memberId: token.trim() });
-      if (res.data.success) {
-        setBanner(res.data.data.member);
-        fetchToday();
-        setTimeout(() => setBanner(null), 8000);
-      }
-    } catch { toast.error("Scan Failed"); }
-  }, [fetchToday]);
 
   const handleScan = useCallback(async (e) => {
     e.preventDefault();
@@ -217,48 +180,13 @@ export default function Attendance() {
   }, [scanInput, fetchToday]);
 
   useEffect(() => {
-    let mounted = true;
-    const timer = setTimeout(() => {
-      if (mounted) fetchToday();
-    }, 0);
+    const timer = setTimeout(fetchToday, 0);
     const int = setInterval(fetchToday, 10000);
     return () => {
-      mounted = false;
       clearTimeout(timer);
       clearInterval(int);
     };
   }, [fetchToday]);
-
-  useEffect(() => {
-    let mounted = true;
-    if (scanMode === 'display') {
-      const timer = setTimeout(() => {
-        if (mounted) fetchGymToken();
-      }, 0);
-      const int = setInterval(fetchGymToken, 30000);
-      const countdown = setInterval(() => setTimeLeft(p => p > 0 ? p - 1 : 30), 1000);
-      return () => {
-        mounted = false;
-        clearTimeout(timer);
-        clearInterval(int);
-        clearInterval(countdown);
-      };
-    }
-  }, [scanMode, fetchGymToken]);
-
-  useEffect(() => {
-    if (scanMode === 'camera') {
-      const t = setTimeout(() => {
-        try {
-          const sc = new Html5Qrcode("attendance-reader");
-          html5QrCodeRef.current = sc;
-          sc.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, handleDecodedQR, () => {})
-            .catch(console.error);
-        } catch (e) { console.error(e); }
-      }, 300);
-      return () => { clearTimeout(t); stopCameraScanner(); };
-    }
-  }, [scanMode, handleDecodedQR]);
 
   return (
     <div style={{ position: 'relative', minHeight: '100vh', padding: '24px 32px', overflow: 'hidden' }}>
@@ -277,7 +205,7 @@ export default function Attendance() {
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.02em', background: 'linear-gradient(to right, #fff, #999)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Terminal Console
+              Check-in Terminal
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4, color: 'var(--text-3)', fontSize: '0.85rem', fontWeight: 600 }}>
                <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={14} /> Main Entrance</span>
@@ -288,18 +216,10 @@ export default function Attendance() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
           <div style={{ display: 'flex', gap: 8 }}>
             <button 
-              onClick={() => setScanMode('display')} 
-              className={scanMode === 'display' ? 'btn btn-primary' : 'btn btn-ghost'}
-              style={{ borderRadius: 16, padding: '12px 24px' }}
+              className="btn btn-primary"
+              style={{ borderRadius: 16, padding: '12px 24px', cursor: 'default' }}
             >
-              <QrCode size={18} /> Display Mode
-            </button>
-            <button 
-              onClick={() => setScanMode('camera')} 
-              className={scanMode === 'camera' ? 'btn btn-primary' : 'btn btn-ghost'}
-              style={{ borderRadius: 16, padding: '12px 24px' }}
-            >
-              <Camera size={18} /> Scanner Mode
+              <Smartphone size={18} /> Kiosk Monitor
             </button>
           </div>
           <LiveClock />
@@ -317,83 +237,49 @@ export default function Attendance() {
           <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'var(--primary)', filter: 'blur(120px)', opacity: 0.1 }} />
           <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '40%', height: '40%', background: 'var(--success)', filter: 'blur(120px)', opacity: 0.1 }} />
 
-          {scanMode === 'display' ? (
-            <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', width: '100%' }}>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#fff', marginBottom: 8 }}>Ready for Scan</h2>
-                <p style={{ color: 'var(--text-3)', fontSize: '1.1rem', marginBottom: 48 }}>Show your Member Pass to the terminal</p>
-              </motion.div>
+          <div style={{ textAlign: 'center', marginBottom: 48 }}>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#fff', marginBottom: 8 }}>Kiosk Monitor</h2>
+              <p style={{ color: 'var(--text-3)', fontSize: '1.1rem' }}>Watching live entries from Terminal Kiosk</p>
+            </motion.div>
+          </div>
 
-              <div style={{ position: 'relative', width: 340, height: 340, margin: '0 auto' }}>
-                {/* Progress Circle */}
-                <svg width="340" height="340" style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
-                  <circle cx="170" cy="170" r="160" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="4" />
-                  <motion.circle 
-                    cx="170" cy="170" r="160" fill="none" 
-                    stroke="var(--primary)" strokeWidth="4" strokeLinecap="round"
-                    animate={{ strokeDasharray: `${(timeLeft / 30) * 1005} 1005` }}
-                    transition={{ duration: 1, ease: 'linear' }}
-                  />
-                </svg>
-
-                {/* QR Box */}
-                <motion.div 
-                  className="card"
-                  style={{ 
-                    width: 280, height: 280, margin: '30px auto', background: '#fff', padding: 20, borderRadius: 32, 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
-                    boxShadow: '0 0 60px rgba(245,158,11,0.2)'
-                  }}
-                  key={gymToken}
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                >
-                  <div className="scan-beam" style={{ top: 20, width: 'calc(100% - 40px)', left: 20 }} />
-                  {gymToken ? (
-                    <QRCodeSVG value={gymToken} size={240} level="H" includeMargin={false} />
-                  ) : (
-                    <Loader2 className="animate-spin" size={40} color="#000" />
-                  )}
-                </motion.div>
+          <div style={{ position: 'relative', width: '100%', maxWidth: 500 }}>
+            <div style={{ position: 'relative', height: 360, background: 'rgba(0,0,0,0.4)', borderRadius: 32, overflow: 'hidden', border: '2px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 300, height: 300 }}>
+                <DotLottiePlayer
+                  src="https://lottie.host/68222302-861e-4623-9366-079633e680a8/Security_Shield.json"
+                  autoplay
+                  loop
+                />
               </div>
-
-              <div style={{ marginTop: 64, display: 'flex', gap: 24, justifyContent: 'center' }}>
-                 <div className="glass-panel" style={{ padding: '24px 40px', borderRadius: 24, minWidth: 200 }}>
-                    <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary)' }}>{todayCount}</div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total Entry</div>
-                 </div>
-                 <div className="glass-panel" style={{ padding: '24px 40px', borderRadius: 24, minWidth: 200 }}>
-                    <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--success)' }}>{nowIn}</div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Active Now</div>
-                 </div>
+              <div style={{ position: 'absolute', bottom: 24, background: 'var(--primary-surface)', padding: '8px 20px', borderRadius: 100, border: '1px solid var(--primary-border)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.05em' }}>
+                 LISTENING FOR TERMINAL PIN...
               </div>
             </div>
-          ) : (
-            <div style={{ width: '100%', maxWidth: 500 }}>
-              <div style={{ position: 'relative' }}>
-                <div id="attendance-reader" style={{ width: '100%', height: 360, background: '#000', borderRadius: 32, overflow: 'hidden', border: '2px solid var(--border)' }} />
-                <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: 220, height: 220 }}>
-                    <DotLottiePlayer
-                      src="https://lottie.host/86d4e868-3e5e-4b4d-9654-e0c656e63233/QR_Scan.json"
-                      autoplay
-                      loop
-                    />
-                  </div>
-                </div>
+          </div>
+
+          <div style={{ marginTop: 48, display: 'flex', gap: 24, justifyContent: 'center', width: '100%' }}>
+              <div className="glass-panel" style={{ padding: '24px 40px', borderRadius: 24, minWidth: 200, textAlign: 'center' }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary)' }}>{todayCount}</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total Entry</div>
               </div>
-              <div style={{ marginTop: 32 }}>
-                <form onSubmit={handleScan} className="input-wrapper">
-                  <Search className="input-icon" size={20} />
-                  <input 
-                    className="form-input" placeholder="MANUAL MEMBER ID ENTRY..."
-                    style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 20, padding: '16px 20px 16px 52px', fontSize: '1rem', letterSpacing: '0.1em' }}
-                    value={scanInput} onChange={e => setScanInput(e.target.value)}
-                  />
-                </form>
+              <div className="glass-panel" style={{ padding: '24px 40px', borderRadius: 24, minWidth: 200, textAlign: 'center' }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--success)' }}>{nowIn}</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Active Now</div>
               </div>
-            </div>
-          )}
+          </div>
+
+          <div style={{ marginTop: 48, width: '100%', maxWidth: 500 }}>
+            <form onSubmit={handleScan} className="input-wrapper">
+              <Search className="input-icon" size={20} />
+              <input 
+                className="form-input" placeholder="MANUAL MEMBER ID OVERRIDE..."
+                style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 20, padding: '16px 20px 16px 52px', fontSize: '1rem', letterSpacing: '0.1em' }}
+                value={scanInput} onChange={e => setScanInput(e.target.value)}
+              />
+            </form>
+          </div>
         </motion.div>
 
         {/* ── Activity Sidebar ── */}

@@ -6,22 +6,24 @@ const {
   getMemberQR, getExpiringSoon, getMemberStats, getLeaderboard
 } = require('../controllers/members.controller');
 
+const { upload } = require('../services/storage.service');
+
 router.use(protect);
 
 router.get('/leaderboard', getLeaderboard);
 
 router.route('/')
   .get(authorize('owner', 'trainer'), getMembers)
-  .post(authorize('owner', 'trainer'), createMember);
+  .post(authorize('owner', 'trainer'), upload.single('photo'), createMember);
 
 router.get('/stats', authorize('owner', 'trainer'), getMemberStats);
 router.get('/expiring-soon', authorize('owner', 'trainer'), getExpiringSoon);
 
 router.route('/:id')
-  .get(getMember)
-  .patch(authorize('owner', 'trainer'), updateMember)
+  .get(authorize('owner', 'trainer'), getMember)
+  .patch(authorize('owner', 'trainer'), upload.single('photo'), updateMember)
   .delete(authorize('owner'), deleteMember);
 
-router.get('/:id/qr', getMemberQR);
+router.get('/:id/qr', authorize('owner', 'trainer'), getMemberQR);
 
 module.exports = router;

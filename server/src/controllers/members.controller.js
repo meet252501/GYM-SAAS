@@ -56,7 +56,8 @@ const createMember = async (req, res, next) => {
       userId,
       firstName, lastName, phone, dateOfBirth, gender,
       goal: goal || 'general_fitness',
-      fitnessLevel: fitnessLevel || 'beginner'
+      fitnessLevel: fitnessLevel || 'beginner',
+      photo: req.file ? req.file.path : undefined
     });
 
     // Assign membership if plan provided
@@ -100,6 +101,10 @@ const updateMember = async (req, res, next) => {
     const allowed = ['firstName', 'lastName', 'phone', 'dateOfBirth', 'gender', 'goal', 'fitnessLevel', 'photo', 'emergencyContact', 'currentMetrics'];
     const updates = {};
     allowed.forEach(field => { if (req.body[field] !== undefined) updates[field] = req.body[field]; });
+    
+    if (req.file) {
+      updates.photo = req.file.path;
+    }
 
     const member = await Member.findOneAndUpdate(
       { _id: req.params.id, gymId: req.user.gymId },

@@ -4,14 +4,15 @@ const { protect, authorize } = require('../middleware/auth.middleware');
 const {
   getPayments,
   recordPayment,
-  getPaymentStats
+  getPaymentStats,
+  downloadInvoice
 } = require('../controllers/payment.controller');
 
 router.use(protect);
-router.use(authorize('owner', 'trainer'));
 
-router.get('/', getPayments);
-router.post('/record', recordPayment);
-router.get('/stats', getPaymentStats);
+router.get('/', authorize('owner', 'trainer'), getPayments);
+router.post('/record', authorize('owner', 'trainer'), recordPayment);
+router.get('/stats', authorize('owner', 'trainer'), getPaymentStats);
+router.get('/:id/invoice', downloadInvoice);
 
 module.exports = router;

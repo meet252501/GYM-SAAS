@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Utensils, Plus, Search, Edit3, Trash2, Droplet, Flame, CheckCircle, X } from 'lucide-react';
-import { dietPlanApi } from '../../api';
+import { Utensils, Plus, Search, Edit3, Trash2, Droplet, Flame, CheckCircle, X, Users, Info } from 'lucide-react';
+import { dietPlanApi, membersApi } from '../../api';
 
 export default function DietPlans() {
   const [search, setSearch] = useState('');
@@ -9,6 +9,10 @@ export default function DietPlans() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [form, setForm] = useState({ name: '', calories: 2000, protein: 150, carbs: 200, fat: 70 });
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [assignForm, setAssignForm] = useState({ memberId: '' });
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,7 +26,7 @@ export default function DietPlans() {
           protein: p.macros?.protein || 0,
           carbs: p.macros?.carbs || 0,
           fat: p.macros?.fat || 0,
-          assignedTo: 0 // In a real app, this would come from members
+          assignedTo: p.assignedMembers?.length || 0
         })));
       }
     } catch (error) {
@@ -30,6 +34,20 @@ export default function DietPlans() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const fetchMembers = async () => {
+    try {
+      const res = await membersApi.getAll({ limit: 100 });
+      setMembers(res.data.data || []);
+    } catch {
+      // Error handled by UI or logging
+    }
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(fetchMembers, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -83,6 +101,21 @@ export default function DietPlans() {
       setForm({ name: '', calories: 2000, protein: 150, carbs: 200, fat: 70 });
     }
     setIsModalOpen(true);
+  }
+
+  async function handleAssign(e) {
+    e.preventDefault();
+    try {
+      const { data } = await dietPlanApi.assign(selectedPlan._id, { memberIds: [assignForm.memberId] });
+      if (data.success) {
+        setToast('Diet plan assigned successfully');
+        setIsAssignModalOpen(false);
+        fetchPlans();
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      console.error('Assignment failed:', error);
+    }
   }
 
   async function handleDelete(id) {
@@ -189,6 +222,17 @@ export default function DietPlans() {
                     <div style={{ fontWeight: 700 }}>{plan.fat}g</div>
                   </div>
                 </div>
+
+                <button 
+                  onClick={() => {
+                    setSelectedPlan(plan);
+                    setIsAssignModalOpen(true);
+                  }}
+                  className="btn btn-primary btn-sm"
+                  style={{ width: '100%', marginTop: 'auto' }}
+                >
+                  <Users size={14} /> Assign to Member
+                </button>
               </motion.div>
             ))}
           </AnimatePresence>
@@ -236,6 +280,42 @@ export default function DietPlans() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {isAssignModalOpen && (
+          <div className="modal-overlay" onClick={() => setIsAssignModalOpen(false)}>
+            <motion.div className="modal-content" onClick={e => e.stopPropagation()} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} style={{ maxWidth: '400px' }}>
+              <div className="modal-header">
+                <h2>Assign {selectedPlan?.name}</h2>
+                <button className="btn btn-ghost btn-icon" onClick={() => setIsAssignModalOpen(false)}><X size={20} /></button>
+              </div>
+              <form onSubmit={handleAssign} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Select Member</label>
+                  <select 
+                    className="form-select" 
+                    required
+                    value={assignForm.memberId}
+                    onChange={e => setAssignForm({ memberId: e.target.value })}
+                  >
+                    <option value="">-- Select Member --</option>
+                    {members.map(m => (
+                      <option key={m._id} value={m._id}>{m.firstName} {m.lastName} ({m.memberId})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="p-3 bg-primary/5 rounded-xl border border-primary/10 flex gap-3">
+                  <Info className="text-primary flex-shrink-0" size={18} />
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-3)', margin: 0 }}>This will link the nutritional plan to the member's profile for tracking.</p>
+                </div>
+                <div className="modal-footer" style={{ marginTop: '16px' }}>
+                  <button type="button" className="btn btn-ghost" onClick={() => setIsAssignModalOpen(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary">Confirm Assignment</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

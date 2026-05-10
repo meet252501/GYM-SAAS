@@ -7,91 +7,151 @@ const { MembershipPlan } = require('../models/Membership');
 const Gym = require('../models/Gym');
 const User = require('../models/User');
 const Member = require('../models/Member');
+const WorkoutProgram = require('../models/WorkoutProgram');
 
 const connectDB = async () => {
-  await mongoose.connect(process.env.MONGO_URI);
-  console.log('✅ DB connected for seeding');
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log('✅ DB connected for seeding');
+  } catch (err) {
+    console.error('❌ DB connection failed:', err.message);
+    process.exit(1);
+  }
 };
 
-// ─── BADGES ──────────────────────────────────────────────────
+// ─── DATA DEFINITIONS ────────────────────────────────────────
+
 const badges = [
   { name: 'First Step', description: 'Completed your first workout', icon: '👟', category: 'milestone', criteriaType: 'workouts_completed', criteriaThreshold: 1, points: 10, rarity: 'common' },
   { name: 'Iron Will', description: '7-day check-in streak', icon: '🔩', category: 'attendance', criteriaType: 'streak_days', criteriaThreshold: 7, points: 25, rarity: 'common' },
   { name: 'Unstoppable', description: '30-day check-in streak', icon: '🔥', category: 'attendance', criteriaType: 'streak_days', criteriaThreshold: 30, points: 100, rarity: 'rare' },
-  { name: 'Legend', description: '100-day streak', icon: '👑', category: 'attendance', criteriaType: 'streak_days', criteriaThreshold: 100, points: 500, rarity: 'legendary' },
-  { name: 'PR Machine', description: 'Set 10 personal records', icon: '🏆', category: 'workout', criteriaType: 'prs_set', criteriaThreshold: 10, points: 50, rarity: 'rare' },
-  { name: 'Century Club', description: '100 workouts logged', icon: '💯', category: 'milestone', criteriaType: 'workouts_completed', criteriaThreshold: 100, points: 200, rarity: 'epic' },
-  { name: 'Early Bird', description: 'Check in before 7 AM, 5 times', icon: '🌅', category: 'attendance', criteriaType: 'early_checkins', criteriaThreshold: 5, points: 30, rarity: 'rare' },
-  { name: 'Class Act', description: 'Attend 10 classes', icon: '🎓', category: 'milestone', criteriaType: 'classes_attended', criteriaThreshold: 10, points: 40, rarity: 'common' },
-  { name: 'Comeback Kid', description: 'Return after a 14+ day gap', icon: '🔄', category: 'milestone', criteriaType: 'comeback', criteriaThreshold: 1, points: 20, rarity: 'common' },
-  { name: 'Volume King', description: 'Lift 100,000 kg total', icon: '📊', category: 'workout', criteriaType: 'total_volume', criteriaThreshold: 100000, points: 150, rarity: 'epic' },
-  { name: 'Founding Member', description: 'Joined in the first 30 days', icon: '🏅', category: 'milestone', criteriaType: 'founding_member', criteriaThreshold: 1, points: 100, rarity: 'legendary' },
-  { name: 'Goal Crusher', description: 'Achieved your fitness goal', icon: '🎯', category: 'milestone', criteriaType: 'goal_achieved', criteriaThreshold: 1, points: 200, rarity: 'epic' },
-  { name: 'Night Owl', description: 'Check in after 9 PM, 5 times', icon: '🦉', category: 'attendance', criteriaType: 'late_checkins', criteriaThreshold: 5, points: 30, rarity: 'rare' },
-  { name: 'Gym Rat', description: '50 workouts logged', icon: '🐀', category: 'milestone', criteriaType: 'workouts_completed', criteriaThreshold: 50, points: 100, rarity: 'rare' },
-  { name: 'Titan', description: 'Lift 500,000 kg total', icon: '🦾', category: 'workout', criteriaType: 'total_volume', criteriaThreshold: 500000, points: 500, rarity: 'legendary' },
-  { name: 'Social Star', description: 'Share 5 workouts with friends', icon: '🌟', category: 'social', criteriaType: 'workouts_shared', criteriaThreshold: 5, points: 50, rarity: 'rare' },
-  { name: 'Early Bird Elite', description: '20 early check-ins', icon: '☀️', category: 'attendance', criteriaType: 'early_checkins', criteriaThreshold: 20, points: 150, rarity: 'epic' },
-  { name: 'Master of Motion', description: 'Attend 50 classes', icon: '🌀', category: 'milestone', criteriaType: 'classes_attended', criteriaThreshold: 50, points: 250, rarity: 'epic' },
-  { name: 'Cyber Warrior', description: 'Earn 10 unique badges', icon: '⚔️', category: 'milestone', criteriaType: 'badges_earned', criteriaThreshold: 10, points: 300, rarity: 'legendary' },
-  { name: 'God Mode', description: 'Complete 365-day check-in streak', icon: '⚡', category: 'attendance', criteriaType: 'streak_days', criteriaThreshold: 365, points: 2000, rarity: 'divine' }
+  { name: 'PR Machine', description: 'Set 10 personal records', icon: '🏆', category: 'workout', criteriaType: 'prs_set', criteriaThreshold: 10, points: 50, rarity: 'rare' }
 ];
 
-// ─── EXERCISES (sample) ───────────────────────────────────────
 const exercises = [
-  // Chest
-  { name: 'Bench Press', category: 'strength', primaryMuscle: ['chest'], secondaryMuscle: ['triceps', 'shoulders'], equipment: ['barbell', 'bench'], difficulty: 'intermediate', instructions: ['Lie flat on bench', 'Grip bar shoulder-width', 'Lower to chest', 'Press up powerfully'] },
-  { name: 'Push-Up', category: 'strength', primaryMuscle: ['chest'], secondaryMuscle: ['triceps', 'shoulders'], equipment: ['bodyweight'], difficulty: 'beginner', instructions: ['Start in plank', 'Lower chest to ground', 'Push back up'] },
-  { name: 'Incline Dumbbell Press', category: 'strength', primaryMuscle: ['chest'], secondaryMuscle: ['triceps'], equipment: ['dumbbells', 'bench'], difficulty: 'intermediate' },
-  { name: 'Cable Fly', category: 'strength', primaryMuscle: ['chest'], equipment: ['cable machine'], difficulty: 'intermediate' },
-  // Back
-  { name: 'Deadlift', category: 'strength', primaryMuscle: ['back', 'glutes'], secondaryMuscle: ['hamstrings'], equipment: ['barbell'], difficulty: 'advanced', instructions: ['Stand over bar', 'Hinge at hips', 'Keep back flat', 'Drive through heels'] },
-  { name: 'Pull-Up', category: 'strength', primaryMuscle: ['back'], secondaryMuscle: ['biceps'], equipment: ['pull-up bar'], difficulty: 'intermediate' },
-  { name: 'Barbell Row', category: 'strength', primaryMuscle: ['back'], secondaryMuscle: ['biceps'], equipment: ['barbell'], difficulty: 'intermediate' },
-  { name: 'Lat Pulldown', category: 'strength', primaryMuscle: ['back'], equipment: ['cable machine'], difficulty: 'beginner' },
-  // Legs
-  { name: 'Squat', category: 'strength', primaryMuscle: ['quads', 'glutes'], secondaryMuscle: ['hamstrings', 'calves'], equipment: ['barbell', 'squat rack'], difficulty: 'intermediate', instructions: ['Bar on traps', 'Feet shoulder-width', 'Squat deep', 'Drive up'] },
-  { name: 'Leg Press', category: 'strength', primaryMuscle: ['quads'], secondaryMuscle: ['glutes'], equipment: ['leg press machine'], difficulty: 'beginner' },
-  { name: 'Romanian Deadlift', category: 'strength', primaryMuscle: ['hamstrings'], equipment: ['barbell'], difficulty: 'intermediate' },
-  { name: 'Leg Curl', category: 'strength', primaryMuscle: ['hamstrings'], equipment: ['leg curl machine'], difficulty: 'beginner' },
-  // Shoulders
-  { name: 'Overhead Press', category: 'strength', primaryMuscle: ['shoulders'], secondaryMuscle: ['triceps'], equipment: ['barbell'], difficulty: 'intermediate' },
-  { name: 'Lateral Raise', category: 'strength', primaryMuscle: ['shoulders'], equipment: ['dumbbells'], difficulty: 'beginner' },
-  { name: 'Face Pull', category: 'strength', primaryMuscle: ['shoulders'], equipment: ['cable machine'], difficulty: 'beginner' },
-  // Arms
-  { name: 'Barbell Curl', category: 'strength', primaryMuscle: ['biceps'], equipment: ['barbell'], difficulty: 'beginner' },
-  { name: 'Tricep Pushdown', category: 'strength', primaryMuscle: ['triceps'], equipment: ['cable machine'], difficulty: 'beginner' },
-  { name: 'Hammer Curl', category: 'strength', primaryMuscle: ['biceps'], equipment: ['dumbbells'], difficulty: 'beginner' },
-  // Cardio
-  { name: 'Treadmill Run', category: 'cardio', primaryMuscle: ['legs'], equipment: ['treadmill'], difficulty: 'beginner' },
-  { name: 'Rowing Machine', category: 'cardio', primaryMuscle: ['back', 'legs'], equipment: ['rowing machine'], difficulty: 'beginner' },
-  { name: 'Jump Rope', category: 'cardio', primaryMuscle: ['calves'], equipment: ['jump rope'], difficulty: 'beginner' },
-  { name: 'Cycling', category: 'cardio', primaryMuscle: ['legs'], equipment: ['stationary bike'], difficulty: 'beginner' },
-  // Core
-  { name: 'Plank', category: 'strength', primaryMuscle: ['core'], equipment: ['bodyweight'], difficulty: 'beginner' },
-  { name: 'Crunches', category: 'strength', primaryMuscle: ['core'], equipment: ['bodyweight'], difficulty: 'beginner' },
-  { name: 'Leg Raise', category: 'strength', primaryMuscle: ['core'], equipment: ['bodyweight'], difficulty: 'intermediate' },
-  { name: 'Cable Crunch', category: 'strength', primaryMuscle: ['core'], equipment: ['cable machine'], difficulty: 'intermediate' },
+  { 
+    name: 'Neural Squat', category: 'strength', primaryMuscle: ['quads', 'glutes'], 
+    equipment: ['barbell', 'squat rack'], difficulty: 'intermediate',
+    animationUrl: 'https://lottie.host/83679808-01e4-4d89-9486-d2547a836894/l8j88P65G3.lottie'
+  },
+  { 
+    name: 'Cyber Pushup', category: 'strength', primaryMuscle: ['chest', 'triceps'], 
+    equipment: ['bodyweight'], difficulty: 'beginner',
+    animationUrl: 'https://lottie.host/64703a4b-9e48-4395-9467-f417f7b2e666/p8Z78X65Gz.json'
+  },
+  { 
+    name: 'Plasma Lunge', category: 'strength', primaryMuscle: ['legs'], 
+    equipment: ['dumbbells'], difficulty: 'intermediate',
+    animationUrl: 'https://lottie.host/6ef44b93-8395-468a-b844-3d6f8f8d8f8d/v8Y88A65Gz.json'
+  },
+  { 
+    name: 'Barbell Bench Press', category: 'strength', primaryMuscle: ['chest'], 
+    equipment: ['barbell', 'bench'], difficulty: 'intermediate',
+    animationUrl: 'https://lottie.host/8040d19a-3242-4f3d-9f44-9f4f9f4f9f4f/8vNq3f0R1s.json'
+  },
+  { 
+    name: 'Incline Dumbbell Press', category: 'strength', primaryMuscle: ['chest'], 
+    equipment: ['dumbbells', 'bench'], difficulty: 'beginner',
+    animationUrl: 'https://lottie.host/46481744-8025-4b3d-986c-497793d56784/eL6v1XpW5r.json'
+  }
 ];
 
 const runSeed = async () => {
   await connectDB();
   try {
-    // Clear and re-seed badges
-    await Badge.deleteMany({});
+    // 1. Clear existing data
+    await Promise.all([
+      Gym.deleteMany({}),
+      User.deleteMany({}),
+      Member.deleteMany({}),
+      Badge.deleteMany({}),
+      Exercise.deleteMany({}),
+      WorkoutProgram.deleteMany({})
+    ]);
+    console.log('🗑️  Cleared existing data');
+
+    // 2. Create Global Gym
+    const gym = await Gym.create({
+      name: 'GymFlow Elite HQ',
+      address: { street: 'Main Tech Park', city: 'Metropolis', state: 'CA', pincode: '90001' },
+      email: 'hq@gymflow.io',
+      ownerId: new mongoose.Types.ObjectId() // Placeholder
+    });
+    console.log(`✅ Created Gym: ${gym.name}`);
+
+    // 3. Create Admin User
+    const admin = await User.create({
+      email: 'admin@gymflow.io',
+      passwordHash: 'password123', // Will be hashed by pre-save
+      role: 'owner',
+      gymId: gym._id
+    });
+    gym.ownerId = admin._id;
+    await gym.save();
+    console.log('✅ Created Admin User (admin@gymflow.io / password123)');
+
+    // 4. Create Member User & Profile
+    const memberUser = await User.create({
+      email: 'member@gymflow.io',
+      passwordHash: 'password123',
+      role: 'member',
+      gymId: gym._id
+    });
+    const member = await Member.create({
+      userId: memberUser._id,
+      gymId: gym._id,
+      firstName: 'Test',
+      lastName: 'Member',
+      phone: '9876543210',
+      membershipStatus: 'active',
+      streak: { current: 5, longest: 12 }
+    });
+    console.log('✅ Created Member User (member@gymflow.io / password123)');
+
+    // 5. Seed Badges
     await Badge.insertMany(badges);
     console.log(`✅ Seeded ${badges.length} badges`);
 
-    // Clear and re-seed exercises
-    await Exercise.deleteMany({});
-    const exercisesWithSlug = exercises.map(e => ({
+    // 6. Seed Exercises (Linked to Gym)
+    const exercisesWithMetadata = exercises.map(e => ({
       ...e,
+      gymId: gym._id,
+      isCustom: false,
       slug: e.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     }));
-    await Exercise.insertMany(exercisesWithSlug);
-    console.log(`✅ Seeded ${exercises.length} exercises`);
+    const seededExercises = await Exercise.insertMany(exercisesWithMetadata);
+    console.log(`✅ Seeded ${seededExercises.length} exercises`);
 
-    console.log('\n🎉 Seed complete!');
+    // 7. Seed Workout Program (Assigned to Member)
+    const program = await WorkoutProgram.create({
+      gymId: gym._id,
+      createdBy: admin._id,
+      name: 'Alpha Strength Protocol',
+      description: 'Advanced 4-week strength development phase.',
+      goal: 'muscle_gain',
+      difficulty: 'intermediate',
+      durationWeeks: 4,
+      daysPerWeek: 3,
+      assignedMembers: [member._id],
+      isPublic: true,
+      weeks: [{
+        weekNumber: 1,
+        days: [{
+          dayNumber: 1,
+          label: 'Power Session',
+          exercises: seededExercises.map(ex => ({
+            exerciseId: ex._id,
+            exerciseName: ex.name,
+            sets: 4,
+            reps: '8',
+            restSeconds: 120
+          }))
+        }]
+      }]
+    });
+    console.log(`✅ Seeded & Assigned Program: ${program.name}`);
+
+    console.log('\n🎉 Production Seed Complete!');
     process.exit(0);
   } catch (err) {
     console.error('❌ Seed error:', err);
@@ -100,3 +160,4 @@ const runSeed = async () => {
 };
 
 runSeed();
+

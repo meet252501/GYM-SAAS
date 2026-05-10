@@ -1,14 +1,24 @@
 version: '3.8'
 
 services:
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+
   server:
     build: ./server
     ports:
       - "5000:5000"
     environment:
-      - MONGO_URI=${MONGO_URI}
-      - JWT_SECRET=${JWT_SECRET}
+      - MONGO_URI=mongodb://mongo:27017/gym_db
+      - JWT_SECRET=${JWT_SECRET:-supersecretkey123}
       - NODE_ENV=production
+    depends_on:
+      - mongo
     restart: always
 
   client:
@@ -18,3 +28,6 @@ services:
     depends_on:
       - server
     restart: always
+
+volumes:
+  mongo-data:
