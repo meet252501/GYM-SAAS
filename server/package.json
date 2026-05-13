@@ -31,7 +31,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "node-cache": "^5.1.2",
     "node-cron": "^3.0.3",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^8.0.7",
     "pdfkit": "^0.18.0",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
