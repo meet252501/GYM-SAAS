@@ -74,6 +74,21 @@ const createMember = async (req, res, next) => {
           memberId: member._id, gymId: req.user.gymId,
           planId, planName: plan.name, startDate, endDate, status: 'active', amount: plan.price
         });
+
+        // CREATE PAYMENT RECORD FOR REVENUE TRACKING
+        await Payment.create({
+          gymId: req.user.gymId,
+          memberId: member._id,
+          memberName: `${member.firstName} ${member.lastName}`,
+          amount: plan.price,
+          type: 'membership',
+          status: 'completed',
+          gateway: 'cash', // Default for admin-added members
+          membershipId: membership._id,
+          paidAt: new Date(),
+          notes: `Enrolled in ${plan.name} by ${req.user.role}`
+        });
+
         member.currentMembershipId = membership._id;
         member.membershipStatus = 'active';
         member.membershipExpiry = endDate;
@@ -201,4 +216,29 @@ const getLeaderboard = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
-module.exports = { getMembers, createMember, getMember, updateMember, deleteMember, getMemberQR, getExpiringSoon, getMemberStats, getLeaderboard };
+// @route   PATCH /api/v1/members/:id/protocol
+const assignProtocol = async (req, res, next) => {
+  try {
+    const { source, programId } = req.body;
+    if (!['ai', 'coach', 'custom'].includes(source)) {
+      return errorResponse(res, 'Invalid protocol source', 400);
+    }
+
+    const member = await Member.findOneAndUpdate(
+      { _id: req.params.id, gymId: req.user.gymId },
+      { 
+        assignedProtocol: { 
+          source, 
+          programId: programId || null, 
+          lastUpdated: new Date() 
+        } 
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!member) return errorResponse(res, 'Member not found', 404);
+    return successResponse(res, member, 200, { message: `Protocol updated to ${source}` });
+  } catch (error) { next(error); }
+};
+
+module.exports = { getMembers, createMember, getMember, updateMember, deleteMember, getMemberQR, getExpiringSoon, getMemberStats, getLeaderboard, assignProtocol };

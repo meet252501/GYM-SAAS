@@ -79,16 +79,25 @@ const runSeed = async () => {
     });
     console.log(`✅ Created Gym: ${gym.name}`);
 
-    // 3. Create Admin User
+    // 3. Create Admin Users
     const admin = await User.create({
       email: 'admin@gymflow.io',
-      passwordHash: 'password123', // Will be hashed by pre-save
+      passwordHash: 'password123',
       role: 'owner',
       gymId: gym._id
     });
+
+    // Add Developer Account
+    await User.create({
+      email: 'meetsutariya.2008@gmail.com',
+      passwordHash: 'Dev@Pass2026!', // Temporary secure password for developer
+      role: 'superadmin',
+      gymId: gym._id
+    });
+
     gym.ownerId = admin._id;
     await gym.save();
-    console.log('✅ Created Admin User (admin@gymflow.io / password123)');
+    console.log('✅ Created Admin (admin@gymflow.io) and Developer (meetsutariya.2008@gmail.com)');
 
     // 4. Create Member User & Profile
     const memberUser = await User.create({

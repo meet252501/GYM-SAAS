@@ -235,6 +235,19 @@ const createWorkoutLog = async (req, res, next) => {
         const isPR = weight > 0 && weight > historicalMaxWeight;
         if (isPR) {
           historicalMaxWeight = weight; // update max for consecutive sets in the same workout
+          
+          // SAVE TO PERSONAL RECORDS COLLECTION
+          await require('../models/PersonalRecord').findOneAndUpdate(
+            { memberId: member._id, exerciseId: exerciseId },
+            { 
+              value: weight, 
+              reps, 
+              exerciseName: loggedExercise.exerciseName,
+              logId: undefined, // Will update after log is created
+              achievedAt: new Date() 
+            },
+            { upsert: true, new: true }
+          );
         }
 
         setsWithPR.push({

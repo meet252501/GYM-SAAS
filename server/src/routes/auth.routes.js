@@ -7,6 +7,8 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/refresh', refreshToken);
 router.post('/logout', protect, logout);
+router.post('/forgot-password', require('../controllers/auth.controller').forgotPassword);
+router.post('/reset-password', require('../controllers/auth.controller').resetPassword);
 router.get('/me', protect, getMe);
 router.patch('/me', protect, updateMe);
 

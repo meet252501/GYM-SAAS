@@ -113,28 +113,85 @@ const runMembershipSweep = async () => {
   }
 };
 
+const cronParser = require('cron-parser');
+const GymClass = require('../models/GymClass');
+const ClassSession = require('../models/ClassSession');
+
+/**
+ * Automatically generate class sessions for the next 7 days based on recurring rules.
+ */
+const generateRecurringSessions = async () => {
+  logger.info('📅 Starting recurring class session generation...');
+  try {
+    const classes = await GymClass.find({ 'schedule.type': 'recurring', isActive: true });
+    const now = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(now.getDate() + 7);
+
+    for (const cls of classes) {
+      // Use cron format or simple day-of-week logic
+      // Assuming cls.schedule.recurrence.days = [1, 3, 5] (Mon, Wed, Fri)
+      // and cls.schedule.recurrence.time = "08:00"
+      
+      const [hour, minute] = cls.schedule.recurrence.time.split(':');
+      const days = cls.schedule.recurrence.days.join(',');
+      const expression = `${minute} ${hour} * * ${days}`;
+      
+      const interval = cronParser.parseExpression(expression, {
+        currentDate: now,
+        endDate: nextWeek,
+        tz: 'UTC' // In a real app, use gym's timezone
+      });
+
+      while (interval.hasNext()) {
+        const nextDate = interval.next().toDate();
+        
+        // Check if session already exists
+        const exists = await ClassSession.findOne({ 
+          classId: cls._id, 
+          startsAt: nextDate 
+        });
+
+        if (!exists) {
+          await ClassSession.create({
+            classId: cls._id,
+            gymId: cls.gymId,
+            trainerId: cls.trainerId,
+            startsAt: nextDate,
+            endsAt: new Date(nextDate.getTime() + cls.duration * 60000),
+            capacity: cls.capacity,
+            status: 'scheduled'
+          });
+          logger.info(`Generated session for ${cls.name} on ${nextDate}`);
+        }
+      }
+    }
+    logger.info('✅ Recurring session generation complete.');
+  } catch (error) {
+    logger.error('❌ Error generating recurring sessions:', error);
+  }
+};
+
 /**
  * Initialize all cron jobs for GymFlow Pro
  */
 const initCronJobs = () => {
-  // Runs daily at 9:00 AM (0 9 * * *)
-  cron.schedule('0 9 * * *', () => {
-    runMembershipSweep();
-  });
+  // Expiration check: Daily 9 AM
+  cron.schedule('0 9 * * *', () => runMembershipSweep());
 
-  // Runs weekly on Monday at 10:00 AM (0 10 * * 1)
-  cron.schedule('0 10 * * 1', () => {
-    runLeaderboardDigest();
-  });
+  // Class generation: Every Sunday midnight
+  cron.schedule('0 0 * * 0', () => generateRecurringSessions());
 
-  logger.info('📅 Cron scheduler initialized: Expiration alerts (Daily) & Leaderboard Digest (Weekly) configured.');
+  // Leaderboard rewards: Weekly Monday 10 AM
+  cron.schedule('0 10 * * 1', () => runLeaderboardDigest());
 
-  // Run once on server boot in development environment to make sure database updates are instantly verified
+  logger.info('📅 Cron scheduler fully active: Expirations, Class Generation, and Rewards configured.');
+
   if (process.env.NODE_ENV !== 'production') {
     setTimeout(() => {
-      logger.info('🔄 Running initial boot sweep in development...');
+      generateRecurringSessions();
       runMembershipSweep();
-    }, 5000);
+    }, 2000);
   }
 };
 

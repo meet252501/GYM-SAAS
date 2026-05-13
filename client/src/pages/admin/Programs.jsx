@@ -8,6 +8,7 @@ import { workoutsApi, membersApi } from '../../api';
 import Modal from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 import CyberMatrix from '../../components/ui/CyberMatrix';
+import ALL_EXERCISES from '../../data/exercises.json';
 
 export default function AdminPrograms() {
   const [programs, setPrograms] = useState([]);
@@ -59,9 +60,10 @@ export default function AdminPrograms() {
   const fetchExercises = async () => {
     try {
       const res = await workoutsApi.getExercises();
-      setAllExercises(res.data.data || []);
+      const apiEx = (res.data.data || []).map(ex => ({ ...ex, id: ex._id || ex.id }));
+      setAllExercises(apiEx.length > 0 ? apiEx : ALL_EXERCISES);
     } catch {
-      // Error handled
+      setAllExercises(ALL_EXERCISES);
     }
   };
 
@@ -263,12 +265,12 @@ export default function AdminPrograms() {
               <select 
                 className="form-select flex-1"
                 onChange={(e) => {
-                  const ex = allExercises.find(x => x._id === e.target.value);
-                  if (ex && !formData.exercises.find(item => item.exerciseId === ex._id)) {
+                  const ex = allExercises.find(x => (x.id || x._id) === e.target.value);
+                  if (ex && !formData.exercises.find(item => item.exerciseId === (ex.id || ex._id))) {
                     setFormData({
                       ...formData,
                       exercises: [...formData.exercises, { 
-                        exerciseId: ex._id, 
+                        exerciseId: ex.id || ex._id, 
                         exerciseName: ex.name, 
                         sets: 3, 
                         reps: '12', 
@@ -281,7 +283,7 @@ export default function AdminPrograms() {
               >
                 <option value="">-- Select Exercise to Add --</option>
                 {allExercises.map(ex => (
-                  <option key={ex._id} value={ex._id}>{ex.name} ({ex.category})</option>
+                  <option key={ex.id || ex._id} value={ex.id || ex._id}>{ex.name} ({ex.muscle || ex.category})</option>
                 ))}
               </select>
             </div>

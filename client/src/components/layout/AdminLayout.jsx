@@ -84,50 +84,50 @@ export default function AdminLayout({ children }) {
         animate={{ width: collapsed ? 68 : 256 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         style={{
-          background: 'linear-gradient(180deg, #0D0D0F 0%, #111113 100%)',
-          borderRight: '1px solid var(--border)',
+          background: 'linear-gradient(180deg, #09090B 0%, #050507 100%)',
+          borderRight: '1px solid rgba(255,255,255,0.05)',
           display: 'flex', flexDirection: 'column',
           position: 'fixed', top: 0, left: 0, bottom: 0,
           zIndex: 100, overflow: 'hidden',
         }}
       >
         {/* Logo */}
-        <div style={{ padding: collapsed ? '20px 14px' : '20px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12, justifyContent: collapsed ? 'center' : 'flex-start' }}>
-          <div style={{ width: 36, height: 36, background: 'var(--gradient-brand)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'var(--shadow-amber)' }}>
-            <Dumbbell size={18} color="white" strokeWidth={2.5} />
+        <div style={{ padding: collapsed ? '20px 14px' : '24px 20px', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', gap: 12, justifyContent: collapsed ? 'center' : 'flex-start' }}>
+          <div style={{ width: 40, height: 40, background: 'var(--gradient-brand)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'var(--shadow-amber)', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <Dumbbell size={20} color="white" strokeWidth={2.5} />
           </div>
           <AnimatePresence>
             {!collapsed && (
               <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1rem', color: 'var(--text-1)', lineHeight: 1.1 }}>GymFlow</div>
-                <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Pro Admin</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: 'var(--text-1)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>GymFlow</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 2 }}>Quantum Admin</div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* Nav */}
-        <nav style={{ flex: 1, padding: collapsed ? '16px 10px' : '16px 12px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', overflowX: 'hidden' }}>
+        <nav style={{ flex: 1, padding: collapsed ? '16px 10px' : '16px 12px', display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', overflowX: 'hidden' }}>
           {NAV.map(item => <NavItem key={item.path} item={item} collapsed={collapsed} />)}
         </nav>
 
         {/* User + Collapse */}
-        <div style={{ padding: collapsed ? '12px 10px' : '12px', borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ padding: collapsed ? '12px 10px' : '16px', borderTop: '1px solid rgba(255,255,255,0.03)', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {!collapsed && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ width: 32, height: 32, background: 'var(--gradient-brand)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ width: 34, height: 34, background: 'var(--gradient-brand)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '0.85rem', flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}>
                 {(user?.firstName?.[0] || 'A')}
               </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.firstName || 'Admin'}</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--primary)' }}>{user?.role || 'admin'}</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.firstName || 'Admin'}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{user?.role || 'admin'}</div>
               </div>
             </div>
           )}
           <button
             className="btn btn-ghost btn-sm"
             onClick={() => setCollapsed(c => !c)}
-            style={{ justifyContent: 'center', padding: '8px', border: 'none' }}
+            style={{ justifyContent: 'center', padding: '10px', border: 'none', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}
           >
             <motion.div animate={{ rotate: collapsed ? 180 : 0 }} transition={{ duration: 0.3 }}>
               <ChevronLeft size={16} />
@@ -144,30 +144,31 @@ export default function AdminLayout({ children }) {
       >
         {/* Topbar */}
         <header style={{
-          height: 64, background: 'rgba(9,9,11,0.8)', backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', padding: '0 28px',
+          height: 72, background: 'rgba(5,5,7,0.85)', backdropFilter: 'blur(30px) saturate(180%)',
+          borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', padding: '0 32px',
           position: 'sticky', top: 0, zIndex: 50,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', margin: 0 }}>{pageTitle}</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.25rem', margin: 0, color: '#fff', letterSpacing: '-0.01em' }}>{pageTitle}</h2>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <NotificationBell />
-            <button className="btn btn-ghost btn-sm" onClick={async () => { await logout(); navigate('/login'); }} style={{ gap: 6, color: 'var(--text-3)' }}>
-              <LogOut size={15} />
-              <span style={{ fontSize: '0.8rem' }}>Logout</span>
+            <div style={{ width: 1, height: 24, background: 'rgba(255,255,255,0.1)' }} />
+            <button className="btn btn-ghost btn-sm" onClick={async () => { await logout(); navigate('/login'); }} style={{ gap: 8, color: 'var(--text-3)', padding: '8px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.1)' }}>
+              <LogOut size={15} color="var(--danger)" />
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-2)' }}>LOGOUT</span>
             </button>
           </div>
         </header>
 
         {/* Page Content */}
-        <main style={{ flex: 1, padding: '28px', overflowX: 'hidden' }}>
+        <main style={{ flex: 1, padding: '32px', overflowX: 'hidden' }}>
           <motion.div
             key={pathname}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
           >
             {children}
           </motion.div>

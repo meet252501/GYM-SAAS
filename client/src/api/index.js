@@ -19,6 +19,7 @@ export const membersApi = {
   getExpiringSoon: (days = 7) => client.get('/members/expiring-soon', { params: { days } }),
   getStats: () => client.get('/members/stats'),
   getLeaderboard: () => client.get('/members/leaderboard'),
+  assignProtocol: (id, data) => client.patch(`/members/${id}/protocol`, data),
 };
 
 export const analyticsApi = {
@@ -29,27 +30,15 @@ export const analyticsApi = {
   getMember: (id) => client.get(`/analytics/member/${id}`),
 };
 
-let MOCK_PIN = '123456';
-let MOCK_TODAY = [];
-setInterval(() => { MOCK_PIN = Math.floor(100000 + Math.random() * 900000).toString(); }, 30000);
-
 export const attendanceApi = {
-  manual: () => Promise.resolve({ data: { success: true } }),
-  mark: () => Promise.resolve({ data: { success: true } }),
-  dynamicCheckin: (pin) => {
-    if (pin.pin !== MOCK_PIN) return Promise.reject({ response: { data: { message: "Invalid PIN" } } });
-    MOCK_TODAY.unshift({
-      _id: Math.random().toString(),
-      memberId: { firstName: 'Meet', lastName: 'Demo', photo: '', streak: 12 },
-      checkedInAt: new Date().toISOString()
-    });
-    return Promise.resolve({ data: { success: true } });
-  },
-  getAll: () => Promise.resolve({ data: { data: MOCK_TODAY } }),
-  getMy: () => Promise.resolve({ data: { data: MOCK_TODAY } }),
-  getToday: () => Promise.resolve({ data: { data: MOCK_TODAY } }),
-  pinCheckin: () => Promise.resolve({ data: { success: true } }),
-  getKioskPin: () => Promise.resolve({ data: { data: { pin: MOCK_PIN } } }),
+  manual: (data) => client.post('/attendance/manual', data),
+  mark: (id) => client.post(`/attendance/${id}/mark`),
+  dynamicCheckin: (data) => client.post('/attendance/dynamic-checkin', data),
+  getAll: (params) => client.get('/attendance', { params }),
+  getMy: () => client.get('/attendance/my'),
+  getToday: () => client.get('/attendance/today'),
+  pinCheckin: (data) => client.post('/attendance/pin-checkin', data),
+  getKioskPin: () => client.get('/attendance/kiosk-pin'),
 };
 
 export const paymentApi = {
@@ -133,5 +122,7 @@ export const notificationsApi = {
 export const aiApi = {
   getUsage: () => client.get('/ai/usage'),
   trackUsage: () => client.post('/ai/track'),
+  chat: (messages) => client.post('/ai/chat', { messages }),
+  analyzeFood: (image, mimeType) => client.post('/ai/analyze-food', { image, mimeType }),
 };
 

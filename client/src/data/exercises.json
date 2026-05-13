@@ -1,0 +1,702 @@
+[
+  {
+    "id": "tc-01",
+    "name": "Barbell Bench Press",
+    "muscle": "chest",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Bench-Press.gif"
+  },
+  {
+    "id": "tc-02",
+    "name": "Barbell Squat",
+    "muscle": "quadriceps",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/BARBELL-SQUAT.gif"
+  },
+  {
+    "id": "tc-03",
+    "name": "Barbell Deadlift",
+    "muscle": "hamstrings",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Deadlift.gif"
+  },
+  {
+    "id": "tc-04",
+    "name": "Barbell Bent Over Row",
+    "muscle": "lats",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Bent-Over-Row.gif"
+  },
+  {
+    "id": "tc-05",
+    "name": "Barbell Overhead Press",
+    "muscle": "shoulders",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/07/Barbell-Standing-Military-Press.gif"
+  },
+  {
+    "id": "tc-06",
+    "name": "Pull-Up",
+    "muscle": "lats",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Pull-up.gif"
+  },
+  {
+    "id": "tc-07",
+    "name": "Barbell Lunge",
+    "muscle": "quadriceps",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Barbell-Lunge.gif"
+  },
+  {
+    "id": "tc-08",
+    "name": "Barbell Bicep Curl",
+    "muscle": "biceps",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Curl.gif"
+  },
+  {
+    "id": "tc-09",
+    "name": "Tricep Pushdown",
+    "muscle": "triceps",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Pushdown.gif"
+  },
+  {
+    "id": "tc-10",
+    "name": "Leg Press",
+    "muscle": "quadriceps",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2015/11/Leg-Press.gif"
+  },
+  {
+    "id": "tc-11",
+    "name": "Dumbbell Lateral Raise",
+    "muscle": "shoulders",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Lateral-Raise.gif"
+  },
+  {
+    "id": "tc-12",
+    "name": "Seated Leg Curl",
+    "muscle": "hamstrings",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/08/Seated-Leg-Curl.gif"
+  },
+  {
+    "id": "tc-13",
+    "name": "Leg Extension",
+    "muscle": "quadriceps",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/LEG-EXTENSION.gif"
+  },
+  {
+    "id": "tc-14",
+    "name": "Lat Pulldown",
+    "muscle": "lats",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Lat-Pulldown.gif"
+  },
+  {
+    "id": "tc-15",
+    "name": "Dumbbell Fly",
+    "muscle": "chest",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Fly.gif"
+  },
+  {
+    "id": "tc-16",
+    "name": "Incline Barbell Bench Press",
+    "muscle": "chest",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Incline-Barbell-Bench-Press.gif"
+  },
+  {
+    "id": "tc-17",
+    "name": "Hammer Curl",
+    "muscle": "biceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Hammer-Curl.gif"
+  },
+  {
+    "id": "tc-18",
+    "name": "Dumbbell Skull Crusher",
+    "muscle": "triceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Dumbbell-Skull-Crusher.gif"
+  },
+  {
+    "id": "tc-19",
+    "name": "Plank",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/plank.gif"
+  },
+  {
+    "id": "tc-20",
+    "name": "Bulgarian Split Squat",
+    "muscle": "quadriceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Dumbbell-Bulgarian-Split-Squat.gif"
+  },
+  {
+    "id": "tc-21",
+    "name": "Chest Dips",
+    "muscle": "chest",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Chest-Dips.gif"
+  },
+  {
+    "id": "tc-22",
+    "name": "Seated Cable Row",
+    "muscle": "middle back",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Seated-Cable-Row.gif"
+  },
+  {
+    "id": "tc-23",
+    "name": "Face Pull",
+    "muscle": "shoulders",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Face-Pull.gif"
+  },
+  {
+    "id": "tc-24",
+    "name": "Arnold Press",
+    "muscle": "shoulders",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Arnold-Press.gif"
+  },
+  {
+    "id": "tc-25",
+    "name": "Romanian Deadlift",
+    "muscle": "hamstrings",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Romanian-Deadlift.gif"
+  },
+  {
+    "id": "tc-26",
+    "name": "Standing Calf Raise",
+    "muscle": "calves",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2022/04/Standing-Barbell-Calf-Raise.gif"
+  },
+  {
+    "id": "tc-27",
+    "name": "Z-Bar Preacher Curl",
+    "muscle": "biceps",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Z-Bar-Preacher-Curl.gif"
+  },
+  {
+    "id": "tc-28",
+    "name": "Cable Crossover",
+    "muscle": "chest",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Cable-Crossover.gif"
+  },
+  {
+    "id": "tc-29",
+    "name": "Dumbbell Reverse Fly",
+    "muscle": "shoulders",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Reverse-Fly.gif"
+  },
+  {
+    "id": "tc-30",
+    "name": "Barbell Hip Thrust",
+    "muscle": "glutes",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Hip-Thrust.gif"
+  },
+  {
+    "id": "tc-31",
+    "name": "T-Bar Row",
+    "muscle": "lats",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/04/t-bar-rows.gif"
+  },
+  {
+    "id": "tc-32",
+    "name": "Front Squat",
+    "muscle": "quadriceps",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/06/front-squat.gif"
+  },
+  {
+    "id": "tc-33",
+    "name": "Close Grip Bench Press",
+    "muscle": "triceps",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Close-Grip-Bench-Press.gif"
+  },
+  {
+    "id": "tc-34",
+    "name": "Dumbbell Pullover",
+    "muscle": "lats",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Pullover.gif"
+  },
+  {
+    "id": "tc-35",
+    "name": "Concentration Curl",
+    "muscle": "biceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Concentration-Curl.gif"
+  },
+  {
+    "id": "tc-36",
+    "name": "Dumbbell Triceps Extension",
+    "muscle": "triceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Triceps-Extension.gif"
+  },
+  {
+    "id": "tc-37",
+    "name": "Hanging Leg Raise",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/08/Hanging-Leg-Raises.gif"
+  },
+  {
+    "id": "tc-38",
+    "name": "Russian Twist",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Russian-Twist.gif"
+  },
+  {
+    "id": "tc-39",
+    "name": "Burpee",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/burpees.gif"
+  },
+  {
+    "id": "tc-40",
+    "name": "Barbell Good Morning",
+    "muscle": "lower back",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Good-Morning.gif"
+  },
+  {
+    "id": "tc-41",
+    "name": "Dumbbell Goblet Squat",
+    "muscle": "quadriceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Goblet-Squat.gif"
+  },
+  {
+    "id": "tc-42",
+    "name": "One Arm Dumbbell Row",
+    "muscle": "lats",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Row.gif"
+  },
+  {
+    "id": "tc-43",
+    "name": "Kettlebell Swing",
+    "muscle": "hamstrings",
+    "equipment": "Kettlebell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Kettlebell-Swing.gif"
+  },
+  {
+    "id": "tc-44",
+    "name": "Dumbbell Shoulder Press",
+    "muscle": "shoulders",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Shoulder-Press.gif"
+  },
+  {
+    "id": "tc-45",
+    "name": "Cable Lateral Raise",
+    "muscle": "shoulders",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Cable-Lateral-Raise.gif"
+  },
+  {
+    "id": "tc-46",
+    "name": "Incline Dumbbell Press",
+    "muscle": "chest",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Incline-Dumbbell-Press.gif"
+  },
+  {
+    "id": "tc-47",
+    "name": "Decline Bench Press",
+    "muscle": "chest",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Decline-Barbell-Bench-Press.gif"
+  },
+  {
+    "id": "tc-48",
+    "name": "Preacher Curl (Machine)",
+    "muscle": "biceps",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Machine-Preacher-Curl.gif"
+  },
+  {
+    "id": "tc-49",
+    "name": "Rope Pushdown",
+    "muscle": "triceps",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Rope-Pushdown.gif"
+  },
+  {
+    "id": "tc-50",
+    "name": "Lying Leg Curl",
+    "muscle": "hamstrings",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Lying-Leg-Curl.gif"
+  },
+  {
+    "id": "tc-51",
+    "name": "Sumo Deadlift",
+    "muscle": "hamstrings",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Sumo-Deadlift.gif"
+  },
+  {
+    "id": "tc-52",
+    "name": "Seated Dumbbell Press",
+    "muscle": "shoulders",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Seated-Dumbbell-Press.gif"
+  },
+  {
+    "id": "tc-53",
+    "name": "Rear Delt Fly (Machine)",
+    "muscle": "shoulders",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Machine-Rear-Delt-Fly.gif"
+  },
+  {
+    "id": "tc-54",
+    "name": "Dumbbell Shrug",
+    "muscle": "traps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Shrug.gif"
+  },
+  {
+    "id": "tc-55",
+    "name": "Reverse Grip Pulldown",
+    "muscle": "lats",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Reverse-Grip-Lat-Pulldown.gif"
+  },
+  {
+    "id": "tc-56",
+    "name": "Ab Wheel Rollout",
+    "muscle": "abdominals",
+    "equipment": "Wheel",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Ab-Wheel-Rollout.gif"
+  },
+  {
+    "id": "tc-57",
+    "name": "Box Jump",
+    "muscle": "quadriceps",
+    "equipment": "Box",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Box-Jump.gif"
+  },
+  {
+    "id": "tc-58",
+    "name": "Mountain Climbers",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Mountain-Climber.gif"
+  },
+  {
+    "id": "tc-59",
+    "name": "Push-Up",
+    "muscle": "chest",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Push-Up.gif"
+  },
+  {
+    "id": "tc-60",
+    "name": "Spider Curl",
+    "muscle": "biceps",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Spider-Curl.gif"
+  },
+  {
+    "id": "tc-62",
+    "name": "Dumbbell Romanian Deadlift",
+    "muscle": "hamstrings",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Romanian-Deadlift.gif"
+  },
+  {
+    "id": "tc-63",
+    "name": "Seated Calf Raise",
+    "muscle": "calves",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Seated-Calf-Raise.gif"
+  },
+  {
+    "id": "tc-64",
+    "name": "Incline Dumbbell Curl",
+    "muscle": "biceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Incline-Dumbbell-Curl.gif"
+  },
+  {
+    "id": "tc-65",
+    "name": "Reverse Crunches",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Reverse-Crunches.gif"
+  },
+  {
+    "id": "tc-66",
+    "name": "Side Plank",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Side-Plank.gif"
+  },
+  {
+    "id": "tc-67",
+    "name": "Jump Squat",
+    "muscle": "quadriceps",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Jump-Squat.gif"
+  },
+  {
+    "id": "tc-68",
+    "name": "Kettlebell Snatch",
+    "muscle": "shoulders",
+    "equipment": "Kettlebell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Kettlebell-Snatch.gif"
+  },
+  {
+    "id": "tc-69",
+    "name": "Dumbbell Step Up",
+    "muscle": "quadriceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Step-Up.gif"
+  },
+  {
+    "id": "tc-70",
+    "name": "Hack Squat",
+    "muscle": "quadriceps",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Hack-Squat.gif"
+  },
+  {
+    "id": "tc-71",
+    "name": "Cable Fly",
+    "muscle": "chest",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Cable-Fly.gif"
+  },
+  {
+    "id": "tc-72",
+    "name": "Incline Cable Fly",
+    "muscle": "chest",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Incline-Cable-Fly.gif"
+  },
+  {
+    "id": "tc-73",
+    "name": "One Arm Kettlebell Press",
+    "muscle": "shoulders",
+    "equipment": "Kettlebell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Kettlebell-One-Arm-Military-Press.gif"
+  },
+  {
+    "id": "tc-74",
+    "name": "Farmer Carry",
+    "muscle": "forearms",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Farmers-Walk.gif"
+  },
+  {
+    "id": "tc-75",
+    "name": "Tricep Dip (Machine)",
+    "muscle": "triceps",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Machine-Tricep-Dip.gif"
+  },
+  {
+    "id": "tc-76",
+    "name": "Close Grip Lat Pulldown",
+    "muscle": "lats",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Close-Grip-Lat-Pulldown.gif"
+  },
+  {
+    "id": "tc-77",
+    "name": "Superman",
+    "muscle": "lower back",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Superman.gif"
+  },
+  {
+    "id": "tc-78",
+    "name": "Bicycle Crunches",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Bicycle-Crunches.gif"
+  },
+  {
+    "id": "tc-79",
+    "name": "Walking Lunges (Dumbbell)",
+    "muscle": "quadriceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Dumbbell-Walking-Lunge.gif"
+  },
+  {
+    "id": "tc-80",
+    "name": "Cable Bicep Curl",
+    "muscle": "biceps",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Cable-Curl.gif"
+  },
+  {
+    "id": "tc-81",
+    "name": "Leg Raise",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Leg-Raise.gif"
+  },
+  {
+    "id": "tc-82",
+    "name": "V-Up",
+    "muscle": "abdominals",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/V-up.gif"
+  },
+  {
+    "id": "tc-83",
+    "name": "Glute Bridge",
+    "muscle": "glutes",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Glute-Bridge.gif"
+  },
+  {
+    "id": "tc-84",
+    "name": "Hip Thrust (Dumbbell)",
+    "muscle": "glutes",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Hip-Thrust.gif"
+  },
+  {
+    "id": "tc-85",
+    "name": "Kettlebell Goblet Squat",
+    "muscle": "quadriceps",
+    "equipment": "Kettlebell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/06/Kettlebell-Goblet-Squat.gif"
+  },
+  {
+    "id": "tc-86",
+    "name": "Single Leg Deadlift",
+    "muscle": "hamstrings",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Single-Leg-Deadlift.gif"
+  },
+  {
+    "id": "tc-87",
+    "name": "Cable Row (One Arm)",
+    "muscle": "lats",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/One-Arm-Cable-Row.gif"
+  },
+  {
+    "id": "tc-89",
+    "name": "Diamond Push-Up",
+    "muscle": "triceps",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Diamond-Push-up.gif"
+  },
+  {
+    "id": "tc-91",
+    "name": "Upright Row",
+    "muscle": "shoulders",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Upright-Row.gif"
+  },
+  {
+    "id": "tc-94",
+    "name": "Overhead Tricep Extension (Dumbbell)",
+    "muscle": "triceps",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Overhead-Tricep-Extension.gif"
+  },
+  {
+    "id": "tc-95",
+    "name": "Incline Dumbbell Fly",
+    "muscle": "chest",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Incline-Dumbbell-Fly.gif"
+  },
+  {
+    "id": "tc-96",
+    "name": "Hammer Curl (Cable)",
+    "muscle": "biceps",
+    "equipment": "Cable",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Cable-Hammer-Curl.gif"
+  },
+  {
+    "id": "tc-97",
+    "name": "Box Step Up",
+    "muscle": "quadriceps",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Step-up.gif"
+  },
+  {
+    "id": "tc-98",
+    "name": "Chin-Up",
+    "muscle": "biceps",
+    "equipment": "Bodyweight",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Chin-up.gif"
+  },
+  {
+    "id": "tc-100",
+    "name": "Wrist Curl",
+    "muscle": "forearms",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Wrist-Curl.gif"
+  },
+  {
+    "id": "tc-101",
+    "name": "Rear Delt Row (Dumbbell)",
+    "muscle": "shoulders",
+    "equipment": "Dumbbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Rear-Delt-Row.gif"
+  },
+  {
+    "id": "tc-102",
+    "name": "Seated Triceps Extension (Barbell)",
+    "muscle": "triceps",
+    "equipment": "Barbell",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Seated-Triceps-Extension.gif"
+  },
+  {
+    "id": "tc-103",
+    "name": "Single Leg Press",
+    "muscle": "quadriceps",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Single-Leg-Press.gif"
+  },
+  {
+    "id": "tc-104",
+    "name": "Glute Ham Raise",
+    "muscle": "hamstrings",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/04/Glute-Ham-Raise.gif"
+  },
+  {
+    "id": "tc-105",
+    "name": "Calf Press on Leg Press",
+    "muscle": "calves",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/02/Calf-Press-on-Leg-Press.gif"
+  },
+  {
+    "id": "tc-106",
+    "name": "Side Lateral Raise (Machine)",
+    "muscle": "shoulders",
+    "equipment": "Machine",
+    "gifUrl": "https://fitnessprogramer.com/wp-content/uploads/2021/05/Machine-Lateral-Raise.gif"
+  }
+]

@@ -51,8 +51,20 @@ const getDashboard = async (req, res, next) => {
     const lastMrr = revenueLastMonth[0]?.total || 0;
     const revenueGrowth = lastMrr > 0 ? (((mrr - lastMrr) / lastMrr) * 100).toFixed(1) : 0;
 
+    // 5. Advanced Stats: Churn & Retention
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [expiredThisMonth, totalEver] = await Promise.all([
+      Member.countDocuments({ gymId, membershipStatus: 'expired', updatedAt: { $gte: startOfMonth } }),
+      Member.countDocuments({ gymId })
+    ]);
+
+    const churnRate = totalEver > 0 ? ((expiredThisMonth / totalEver) * 100).toFixed(1) : 0;
+    const retentionRate = (100 - churnRate).toFixed(1);
+
     return successResponse(res, {
-      members: { total: totalMembers, active: activeMembers, newThisMonth, expiringSoon },
+      members: { total: totalMembers, active: activeMembers, newThisMonth, expiringSoon, churnRate: Number(churnRate), retentionRate: Number(retentionRate) },
       revenue: {
         thisMonth: mrr, lastMonth: lastMrr,
         growth: Number(revenueGrowth),

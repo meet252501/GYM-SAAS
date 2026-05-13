@@ -1,44 +1,37 @@
-{
-  "name": "GymFlow Pro",
-  "short_name": "GymFlow",
-  "description": "AI-powered gym management, calorie tracking, and member analytics",
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#0a0a0a",
-  "theme_color": "#8b5cf6",
-  "categories": ["health", "fitness", "lifestyle"],
-  "lang": "en-US",
-  "icons": [
+const { 
+  name, 
+  version, 
+  description, 
+  main, 
+  scripts, 
+  dependencies, 
+  devDependencies 
+} = require('./package.json');
+
+module.exports = {
+  name: "GymFlow Pro",
+  short_name: "GymFlow",
+  description: "AI-Powered Gym Management & Fitness Tracker",
+  start_url: "/",
+  display: "standalone",
+  background_color: "#0a0a0b",
+  theme_color: "#a78bfa",
+  icons: [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      src: "pwa-192x192.png",
+      sizes: "192x192",
+      type: "image/png"
     },
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
-    }
-  ],
-  "screenshots": [],
-  "shortcuts": [
-    {
-      "name": "Scan QR",
-      "short_name": "Scan",
-      "description": "Quick attendance scan",
-      "url": "/admin/attendance",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+      src: "pwa-512x512.png",
+      sizes: "512x512",
+      type: "image/png"
     },
     {
-      "name": "My Dashboard",
-      "short_name": "Dashboard",
-      "description": "Member dashboard",
-      "url": "/member/dashboard",
-      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
+      src: "pwa-512x512.png",
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "any maskable"
     }
   ]
-}
+};

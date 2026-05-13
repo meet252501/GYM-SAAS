@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   Search, Plus, Filter, MoreHorizontal, Users, Calendar, 
-  Edit, Trash2, Download, RefreshCw, UserCheck
+  Edit, Trash2, Download, RefreshCw, UserCheck, Dumbbell, Zap, Sparkles
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { membersApi, membershipApi } from '../../api';
@@ -177,7 +177,7 @@ function AddMemberModal({ isOpen, onClose, onSuccess }) {
 }
 
 // ─── Member Action Menu ─────────────────────────────────────
-function MemberMenu({ member, onClose, onDelete }) {
+function MemberMenu({ member, onClose, onDelete, onAssign }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -192,6 +192,9 @@ function MemberMenu({ member, onClose, onDelete }) {
       <button className="dropdown-item" style={{ borderRadius: 10 }} onClick={() => { toast.success("Accessing profile..."); onClose(); }}>
         <Edit size={14} /> Profile Settings
       </button>
+      <button className="dropdown-item" style={{ borderRadius: 10 }} onClick={() => { onAssign(member); onClose(); }}>
+        <Dumbbell size={14} /> Assign Protocol
+      </button>
       <button className="dropdown-item" style={{ borderRadius: 10 }} onClick={() => { toast.success("Loading logs..."); onClose(); }}>
         <Calendar size={14} /> Attendance History
       </button>
@@ -203,10 +206,84 @@ function MemberMenu({ member, onClose, onDelete }) {
   );
 }
 
+// ─── Assign Protocol Modal ──────────────────────────────────────
+function AssignProtocolModal({ isOpen, onClose, member, onSuccess }) {
+  const [source, setSource] = useState('custom');
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await membersApi.assignProtocol(member.id, { source });
+      toast.success(`Protocol set to ${source.toUpperCase()}`);
+      onSuccess();
+      onClose();
+    } catch {
+      toast.error('Failed to update protocol');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Assign Training Protocol">
+      <div style={{ padding: '10px 0' }}>
+        <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', marginBottom: 24 }}>
+          Select the training intelligence source for <span style={{ color: 'var(--primary)', fontWeight: 800 }}>{member?.name}</span>. 
+          This will update their member dashboard instantly.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginBottom: 24 }}>
+          {[
+            { id: 'ai', label: 'AI GENERATED', icon: Sparkles, desc: 'Neural-linked adaptive routines', color: '#a78bfa' },
+            { id: 'coach', label: 'COACH ASSIGNED', icon: Users, desc: 'Human-curated professional plans', color: '#60a5fa' },
+            { id: 'custom', label: 'SELF SELECTED', icon: Dumbbell, desc: 'User-defined workout sequences', color: '#fbbf24' }
+          ].map(opt => (
+            <div 
+              key={opt.id}
+              onClick={() => setSource(opt.id)}
+              style={{
+                padding: '16px 20px',
+                borderRadius: 20,
+                background: source === opt.id ? `${opt.color}15` : 'rgba(255,255,255,0.02)',
+                border: source === opt.id ? `2px solid ${opt.color}` : '2px solid rgba(255,255,255,0.05)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                transition: '0.2s'
+              }}
+            >
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: opt.color }}>
+                <opt.icon size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 900, fontSize: '0.8rem', letterSpacing: 1, color: source === opt.id ? opt.color : 'white' }}>{opt.label}</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-4)', fontWeight: 600 }}>{opt.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn btn-ghost" onClick={onClose} style={{ flex: 1, borderRadius: 14 }}>CANCEL</button>
+          <button className="btn btn-primary" onClick={handleSubmit} disabled={saving} style={{ flex: 2, borderRadius: 14 }}>
+            {saving ? <RefreshCw className="animate-spin" size={16} /> : <Zap size={16} />}
+            {saving ? 'SYNCING...' : 'APPLY PROTOCOL'}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export default function Members() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [members, setMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -253,6 +330,11 @@ export default function Members() {
     } catch {
       toast.error('System error. Termination failed.');
     }
+  };
+
+  const handleAssignClick = (member) => {
+    setSelectedMember(member);
+    setIsAssignModalOpen(true);
   };
 
   return (
@@ -417,6 +499,7 @@ export default function Members() {
                             member={member}
                             onClose={() => setOpenMenuId(null)}
                             onDelete={handleDelete}
+                            onAssign={handleAssignClick}
                           />
                         )}
                       </AnimatePresence>
@@ -433,6 +516,13 @@ export default function Members() {
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
         onSuccess={fetchMembers} 
+      />
+
+      <AssignProtocolModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        member={selectedMember}
+        onSuccess={fetchMembers}
       />
     </motion.div>
     </div>

@@ -2,19 +2,30 @@ require('dotenv').config();
 const app = require('./src/app');
 const connectDB = require('./src/config/db');
 
+const http = require('http');
+const { Server } = require('socket.io');
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();
   
-  // Initialize cron jobs for membership expiry alerting & status updates
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173' }
+  });
+  global.io = io;
+
+  io.on('connection', (socket) => {
+    socket.on('join_gym', (gymId) => socket.join(gymId.toString()));
+  });
+
+  // Initialize cron jobs
   const { initCronJobs } = require('./src/jobs/cron');
   initCronJobs();
 
-  app.listen(PORT, () => {
-    console.log(`🚀 GymFlow Pro API running on port ${PORT}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-    console.log(`🌐 Client URL: ${process.env.CLIENT_URL}`);
+  server.listen(PORT, () => {
+    console.log(`🚀 GymFlow Pro Server + Socket running on port ${PORT}`);
   });
 };
 

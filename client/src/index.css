@@ -61,11 +61,11 @@
   --gradient-sidebar: linear-gradient(180deg, #0D0D0F 0%, #111113 100%);
 
   /* Glassmorphism */
-  --glass-bg: rgba(255, 255, 255, 0.05);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-backdrop: blur(24px) saturate(150%);
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-backdrop: blur(20px) saturate(180%);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 
-  /* Typography */
   --font-body: 'Inter', system-ui, sans-serif;
   --font-display: 'Outfit', 'Inter', sans-serif;
 
@@ -855,3 +855,44 @@ h4 { font-size: 1.1rem; }
   text-align: left;
 }
 .markdown-body th { background: rgba(255,255,255,0.05); color: var(--primary); }
+
+/* === Hide nav & header during active training session === */
+body[data-session='active'] .member-top-header,
+body[data-session='active'] .member-bottom-nav-wrapper {
+  display: none !important;
+}
+
+/* GIF white background fix in hologram */
+.gif-hologram-wrapper {
+  background: #000 !important;
+}
+/* ─── Training Immersion Mode ──────────────────────────── */
+body[data-session="active"] .member-bottom-nav-wrapper,
+body[data-session="active"] header {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body[data-session="active"] .main-scroll-container {
+  padding-bottom: 0 !important;
+}
+
+.liquid-glass-pill {
+  background: rgba(15, 15, 18, 0.8);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.active-nav-pill-surround {
+  position: absolute;
+  inset: -4px -12px;
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.15), transparent 70%);
+  border-radius: 20px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  z-index: -1;
+}

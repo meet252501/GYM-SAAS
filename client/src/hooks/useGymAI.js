@@ -1,11 +1,5 @@
-/**
- * useGymAI — AI hook with backend tracking and per-plan rate limiting
- */
 import { useState, useEffect, useCallback } from 'react';
 import { aiApi } from '../api';
-
-const GROQ_KEY   = import.meta.env.VITE_GROQ_API_KEY;
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 /**
  * State manager for AI usage
@@ -43,44 +37,9 @@ export function useAIUsage() {
   return { ...usage, loading, refreshUsage };
 }
 
-// ─── Backend Tracking Helper ──────────────────────────────────
-async function trackUsage() {
-  try {
-    const res = await aiApi.trackUsage();
-    return res.data; // { success, data: { dailyCount, limit, remaining... } }
-  } catch (e) {
-    console.error('Failed to track AI usage on backend:', e);
-    // If it's a 403, it means limit reached
-    if (e.response?.status === 403) throw new Error("LIMIT_REACHED", { cause: e });
-    return { success: false };
-  }
-}
-
-async function checkQuota() {
-  try {
-    const res = await aiApi.getUsage();
-    const { remaining, limit } = res.data.data;
-    if (limit !== Infinity && remaining <= 0) return false;
-    return true;
-  } catch { return true; } // Fallback to allow if backend is down? Or block?
-}
-
-// ─── Groq API call ────────────────────────────────────────────
-async function callGroq(messages) {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_KEY}` },
-    body: JSON.stringify({ model: 'llama-3.1-8b-instant', messages, max_tokens: 256, temperature: 0.7 }),
-  });
-  if (!res.ok) throw new Error(`Groq ${res.status}`);
-  const data = await res.json();
-  return data.choices[0].message.content;
-}
-
 // ─── Windows AI (Local Browser AI) ────────────────────────────
 async function callWindowsAI(messages) {
   try {
-    // Check for Chrome/Edge window.ai API (Prompt API)
     const ai = window.ai || window.model;
     if (!ai) throw new Error("Local AI not available");
 
@@ -90,15 +49,9 @@ async function callWindowsAI(messages) {
     const systemMsg = messages.find(m => m.role === 'system')?.content || '';
     const userMessages = messages.filter(m => m.role !== 'system');
     
-    // Construct prompt from conversation history
     const prompt = userMessages.map(m => `${m.role === 'assistant' ? 'Coach' : 'User'}: ${m.content}`).join('\n') + '\nCoach:';
 
-    const session = await ai.languageModel.create({
-      systemPrompt: systemMsg,
-      temperature: 0.7,
-      topK: 3
-    });
-
+    const session = await ai.languageModel.create({ systemPrompt: systemMsg, temperature: 0.7, topK: 3 });
     const result = await session.prompt(prompt);
     session.destroy();
     return result;
@@ -108,83 +61,182 @@ async function callWindowsAI(messages) {
   }
 }
 
-// ─── Groq API call (Backup for Cloud) ──────────────────────────
+// ─── Hyper-Detailed Neural Local Engine ───────────────────────────
+const PROTOCOL_LIBRARY = [
+  {
+    keys: ['chest', 'push', 'bench'],
+    reply: `🧬 **PROTOCOL: PECTORAL EXPANSION ALPHA**
+    
+Targeting the clavicular and sternal heads with maximum tension.
 
-// ─── Rule-based fallback engine ───────────────────────────────
-const GYM_RULES = [
-  { keys: ['chest', 'push', 'bench'], reply: '• **Protocol**: Chest Hypertrophy.\n• **Action**: Bench Press (4×8) | Incline DB Press (3×10).\n• **Command**: Focus on pectoral tension. Maximize eccentric control.' },
-  { keys: ['leg', 'squat', 'glute'], reply: '• **Protocol**: Leg Power.\n• **Action**: Barbell Squats (4×8) | RDLs (3×10).\n• **Command**: Maintain parallel depth. Drive through heels.' },
-  { keys: ['back', 'pull', 'deadlift', 'row'], reply: '• **Protocol**: Posterior Chain.\n• **Action**: Deadlifts (4×5) | Weighted Pull-ups (3×MAX).\n• **Command**: Retract scapula. Pull with intent.' },
-  { keys: ['shoulder', 'delt', 'press'], reply: '• **Protocol**: Deltoid Expansion.\n• **Action**: Overhead Press (4×8) | Lateral Raises (4×15).\n• **Command**: Stabilize core. Control the descent.' },
-  { keys: ['cardio', 'run', 'fat', 'weight loss', 'lose'], reply: '• **Protocol**: Metabolic Burn.\n• **Action**: 20m HIIT (45s Sprint/15s Rest).\n• **Command**: Maintain Zone 4 heart rate. Deficit is mandatory.' },
-  { keys: ['protein', 'diet', 'nutrition', 'eat', 'food'], reply: '• **Protocol**: Macronutrient Fuel.\n• **Action**: 2.2g Protein/kg | 3L Water.\n• **Command**: Prioritize lean sources. Track every calorie.' },
-  { keys: ['rest', 'recovery', 'sleep', 'sore'], reply: '• **Protocol**: Tissue Repair.\n• **Action**: 8h Sleep | 48h Group Rest.\n• **Command**: Growth occurs during recovery. Do not skip sleep.' },
-  { keys: ['motivation', 'lazy', 'tired', 'give up', 'quit'], reply: '• **Protocol**: Discipline Override.\n• **Action**: Start immediate 15m segment.\n• **Command**: Discipline trumps motivation. Execute the set.' },
-  { keys: ['streak', 'consistency'], reply: '• **Protocol**: Performance Metrics.\n• **Action**: Maintain 80% attendance.\n• **Command**: Consistency equals growth. No excuses.' },
-  { keys: ['membership', 'plan', 'upgrade', 'elite', 'premium'], reply: '• **Protocol**: Tier Optimization.\n• **Action**: Upgrade to ELITE.\n• **Command**: Unlock unlimited AI coaching and PT sessions.' },
+| Exercise | Sets | Reps | Intensity |
+| :--- | :---: | :---: | :--- |
+| **Incline DB Press** | 4 | 8-10 | 1s Peak Contraction |
+| **Flat Bench Press** | 3 | 6-8 | Explosive Ascent |
+| **Cable Flyes (Low-to-High)** | 3 | 12-15 | Constant Tension |
+| **Weighted Dips** | 3 | AMRAP | Bodyweight + Load |
+
+⚡ **NEURAL INSIGHT**: Myofibrillar hypertrophy is optimized at 80% 1RM. Maintain a 3030 tempo (3s down, 0s pause, 3s up).
+🎯 **DIRECTIVE**: Execute 1 warm-up set now to calibrate mind-muscle link.`
+  },
+  {
+    keys: ['leg', 'squat', 'glute', 'quad'],
+    reply: `🧬 **PROTOCOL: LOWER BODY KINETIC CHAIN**
+    
+Foundation building through multi-joint force production.
+
+| Exercise | Sets | Reps | Intensity |
+| :--- | :---: | :---: | :--- |
+| **Barbell Back Squats** | 4 | 5-8 | 85% 1RM |
+| **Romanian Deadlifts** | 3 | 10 | Focus on Hamstring Stretch |
+| **Leg Press (Wide Stance)** | 3 | 12 | Slow Eccentric |
+| **Walking Lunges** | 3 | 20m | Controlled Balance |
+
+⚡ **NEURAL INSIGHT**: Mechanical tension on the quads is maximized when the knee passes the toe. Ensure full ankle dorsiflexion.
+🎯 **DIRECTIVE**: Hydrate with 500ml water and begin dynamic hip mobilization.`
+  },
+  {
+    keys: ['shoulder', 'delt', 'press', 'side lateral'],
+    reply: `🧬 **PROTOCOL: DELTOID DIMENSIONALITY**
+    
+Width and capped-look optimization via multi-planar abduction.
+
+| Exercise | Sets | Reps | Intensity |
+| :--- | :---: | :---: | :--- |
+| **Overhead Press (OHP)** | 4 | 6-8 | Military Standard |
+| **Lateral Raises (Cable)** | 4 | 15-20 | Behind the Back |
+| **Reverse Pec Deck** | 3 | 12-15 | Rear Delt Bias |
+| **Dumbbell Shrugs** | 3 | 10 | 2s Static Hold |
+
+⚡ **NEURAL INSIGHT**: The lateral delt has a high percentage of Type I fibers. High repetition and "pump" training are effective for sarcoplasmic growth.
+🎯 **DIRECTIVE**: Focus on "pushing the weights away" rather than lifting them up.`
+  },
+  {
+    keys: ['cardio', 'hiit', 'burn', 'fat', 'lose weight', 'metabolic'],
+    reply: `🔥 **PROTOCOL: METABOLIC OVERDRIVE (HIIT)**
+    
+Excess Post-exercise Oxygen Consumption (EPOC) maximization.
+
+| Interval | Duration | Heart Rate | Type |
+| :--- | :---: | :---: | :--- |
+| **Sprint / Power** | 30s | 90-95% Max | Max Effort |
+| **Active Recovery** | 90s | 60% Max | Walking/Slow Jog |
+| **Volume Cycle** | 8-12x | N/A | Consistency |
+
+⚡ **NEURAL INSIGHT**: HIIT increases mitochondrial density and insulin sensitivity. Catecholamine release triggers lipolysis (fat cell mobilization).
+🎯 **DIRECTIVE**: Set a 20-minute timer. Begin Interval 01 immediately.`
+  },
+  {
+    keys: ['mobility', 'flexibility', 'stretch', 'stiff', 'warmup'],
+    reply: `🧘 **PROTOCOL: KINETIC FLUIDITY SYNC**
+    
+Decompressing joints and resetting muscle length-tension relationships.
+
+1. **90/90 Hip Switch**: 2 mins (Unlocks pelvic floor and external rotators).
+2. **Cat-Cow / Thoracic Bridge**: 10 reps (Spinal decompression).
+3. **World's Greatest Stretch**: 5 reps/side (Full kinetic chain activation).
+4. **Cossack Squats**: 10 reps (Adductor and ankle mobility).
+
+⚡ **NEURAL INSIGHT**: Static stretching pre-workout can reduce power output. Focus on *Dynamic* mobility to prep the CNS.
+🎯 **DIRECTIVE**: Execute the "World's Greatest Stretch" for 3 reps per side right now.`
+  },
+  {
+    keys: ['protein', 'diet', 'nutrition', 'eat', 'calories', 'meal'],
+    reply: `🥗 **PROTOCOL: ANABOLIC FUEL ARCHITECTURE**
+    
+Optimizing macronutrient ratios for muscle protein synthesis.
+
+| Nutrient | Target (per kg) | Role |
+| :--- | :---: | :--- |
+| **Protein** | 2.2g | Tissue Repair (Leucine threshold) |
+| **Carbs** | 3.5g - 5g | Glycogen replenishment |
+| **Fats** | 0.8g - 1g | Hormonal health (Testosterone) |
+
+⚡ **NEURAL INSIGHT**: The "Anabolic Window" is a myth; however, total daily protein intake and distribution (every 3-5h) is critical.
+🎯 **DIRECTIVE**: Track your next meal in FuelHQ. Target 40g+ protein.`
+  },
+  {
+    keys: ['back', 'pull', 'row', 'deadlift'],
+    reply: `🧬 **PROTOCOL: POSTERIOR CHAIN DOMINATION**
+    
+Width and thickness optimization for the V-taper aesthetic.
+
+| Exercise | Sets | Reps | Intensity |
+| :--- | :---: | :---: | :--- |
+| **Conventional Deadlift** | 3 | 5 | Heavy Power Load |
+| **Weighted Pull-ups** | 4 | 6-8 | Full Range of Motion |
+| **Seated Cable Rows** | 3 | 12 | Retract Scapula Hard |
+| **Face Pulls** | 3 | 15 | Rear Delt Focus |
+
+⚡ **NEURAL INSIGHT**: Latissimus dorsi activation is superior when hands are in a neutral or supinated grip.
+🎯 **DIRECTIVE**: Hang from the pull-up bar for 30 seconds to decompress the spine.`
+  },
+  {
+    keys: ['rest', 'recovery', 'sleep', 'sore'],
+    reply: `💤 **PROTOCOL: NEURAL RECOVERY SYNC**
+    
+Muscle tissue does not grow in the gym; it grows during deep recovery.
+
+- **SLEEP**: 7.5 - 9 Hours mandatory. Growth hormone peaks during REM cycles.
+- **HYDRATION**: 3.5L+ per day to facilitate nutrient transport.
+- **DELOAD**: If strength drops 10% over 2 sessions, execute a 50% volume week.
+- **ACTIVE RECOVERY**: 20m low-intensity walking to clear lactic acid.
+
+⚡ **NEURAL INSIGHT**: Chronic cortisol elevation (stress) inhibits recovery. Use Ashwagandha or Magnesium to downregulate the CNS.
+🎯 **DIRECTIVE**: Set a strict sleep schedule tonight and disable blue-light devices 1h before bed.`
+  }
 ];
 
 export function ruleBasedReply(userMessage) {
   const msg = userMessage.toLowerCase();
-  for (const rule of GYM_RULES) {
-    if (rule.keys.some(k => msg.includes(k))) return rule.reply;
+  for (const protocol of PROTOCOL_LIBRARY) {
+    if (protocol.keys.some(k => msg.includes(k))) return protocol.reply;
   }
-  return "I'm your GymFlow AI Coach! Ask me about workouts, nutrition, recovery, or your membership. I'm here to help you crush your fitness goals! 💪";
+  return `🤖 **GYMFLOW INTELLIGENCE: STANDBY MODE**
+  
+I am your localized training strategist. I can provide hyper-detailed protocols for:
+- **Strength**: Chest, Back, Legs, Shoulders
+- **Fuel**: Protein targets, Diet ratios, Calories
+- **Metabolic**: HIIT, Fat Loss, Cardio
+- **Recovery**: Sleep, Mobility, Warmups
+
+Try asking: *"Give me a detailed shoulder workout"* or *"How to lose fat?"*`;
 }
 
-// ─── Gemini Vision call for Food Analysis ───────────────────
+// ─── Backend Food Analysis ──────────────────────────────────
 export async function analyzeFoodImage(base64Data, mimeType) {
-  // Check quota first
-  const canProceed = await checkQuota();
-  if (!canProceed) throw new Error("AI daily limit reached. Upgrade for more!");
-
-  const systemMsg = `You are an expert nutritionist AI. Analyze the image of food provided. 
-Identify the food and estimate its macronutrients and calories for the portion shown.
-You MUST return ONLY a raw JSON object with the following structure (no markdown, no backticks, no explanations):
-{
-  "name": "Food Name",
-  "calories": 250,
-  "protein": 15,
-  "carbs": 30,
-  "fat": 10,
-  "serving_size_g": 100
-}`;
-
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemMsg }] },
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { inline_data: { mime_type: mimeType, data: base64Data } },
-              { text: "Analyze this food." }
-            ]
-          }
-        ],
-        generationConfig: { maxOutputTokens: 256, temperature: 0.4 },
-      }),
-    }
-  );
-  if (!res.ok) throw new Error(`Gemini Vision ${res.status}`);
-  const data = await res.json();
-  const textResponse = data.candidates[0].content.parts[0].text;
-  
   try {
-    const cleaned = textResponse.replace(/```json/g, '').replace(/```/g, '').trim();
-    const result = JSON.parse(cleaned);
-    
-    // Success: track usage on backend
-    await trackUsage();
-    
-    return result;
+    const { data } = await aiApi.analyzeFood(base64Data, mimeType);
+    return data.data.analysis;
   } catch (e) {
-    console.error("Failed to parse Gemini vision response:", textResponse, e);
+    console.error("Backend food analysis failed:", e);
+    if (e.response?.status === 403) throw new Error("LIMIT_REACHED", { cause: e });
     throw new Error("Failed to parse food data from image.", { cause: e });
+  }
+}
+
+// ─── Main AI call ─────────────────────────────────────────────
+export async function sendAIMessage(messages) {
+  // 1. ALWAYS TRY BROWSER AI FIRST (FREE - Saves your API limits!)
+  try {
+    const localReply = await callWindowsAI(messages);
+    if (localReply) return localReply;
+  } catch {
+    console.warn("Local AI unavailable, falling back to Backend API...");
+  }
+
+  // 2. BACKEND PROXY (Paid Fallback - used only if local AI fails)
+  try {
+    const { data } = await aiApi.chat(messages);
+    return data.data.reply;
+  } catch (e) {
+    console.warn('Backend AI failed, using rule engine...', e.message);
+    const userMsg = [...messages].reverse().find(m => m.role === 'user')?.content || '';
+    
+    // Check if it's a limit error
+    if (e.response?.status === 403) return ruleBasedReply(userMsg + " (LIMIT REACHED)");
+    
+    return ruleBasedReply(userMsg);
   }
 }
 
@@ -225,39 +277,6 @@ Current Tier: ${user?.membershipPlan || 'ELITE'}
 NEVER provide unstructured prose. Every response must feel like a high-fidelity digital briefing.`;
 }
 
-// ─── Main AI call ─────────────────────────────────────────────
-export async function sendAIMessage(messages) {
-  // 1. ALWAYS TRY WINDOWS AI FIRST (FREE)
-  try {
-    const localReply = await callWindowsAI(messages);
-    if (localReply) return localReply;
-  } catch {
-    console.warn("Local AI failed or not supported, falling back to Cloud API if quota allows.");
-  }
-
-  // 2. Check quota for Cloud API fallback
-  const canProceed = await checkQuota();
-  if (!canProceed) {
-    const userMsg = [...messages].reverse().find(m => m.role === 'user')?.content || '';
-    return ruleBasedReply(userMsg + " (LIMIT REACHED)");
-  }
-
-  try {
-    // 3. Cloud Fallback (Groq)
-    let reply = await callGroq(messages);
-    
-    // Track usage only for Cloud calls
-    await trackUsage();
-    return reply;
-  } catch (e) {
-    console.warn('All AI engines failed, using rule engine...', e.message);
-    const userMsg = [...messages].reverse().find(m => m.role === 'user')?.content || '';
-    return ruleBasedReply(userMsg);
-  }
-}
-
-// ─── Legacy Compatibility (Refactor components to use useAIUsage instead!) ───
 export const PLAN_LIMITS = { Trial: 3, Basic: 10, Premium: 30, Elite: Infinity, Admin: Infinity };
-export const canSendMessage = () => true; // Temporary stub
-export const incrementUsage = () => {};       // Temporary stub
-
+export const canSendMessage = () => true;
+export const incrementUsage = () => {};

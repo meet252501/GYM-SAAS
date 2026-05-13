@@ -67,6 +67,7 @@ app.use('/api/v1/diet-plans', dietPlanRoutes);
 app.use('/api/v1/memberships', membershipRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/metrics', require('./routes/metrics.routes'));
 
 // ─── 404 handler ─────────────────────────────────────────────
 app.use((req, res) => {

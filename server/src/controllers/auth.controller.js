@@ -35,29 +35,29 @@ const register = async (req, res, next) => {
     const exists = await User.findOne({ email });
     if (exists) return errorResponse(res, 'Email already registered', 409);
 
-    // Create gym first
+    // 1. Create a placeholder user to get the ID
+    const user = new User({
+      email,
+      passwordHash: password,
+      role: 'owner'
+    });
+
+    // 2. Create the gym with that ownerId
     const gym = await Gym.create({
       name: gymName,
       phone: gymPhone || '',
       email,
       address: { city: gymCity || '' },
-      ownerId: 'temp' // will update
+      ownerId: user._id
     });
 
-    // Create user (owner)
-    const user = await User.create({
-      email,
-      passwordHash: password, // pre-save hook will hash
-      role: 'owner',
-      gymId: gym._id
-    });
+    // 3. Link gym back to user and save
+    user.gymId = gym._id;
+    await user.save();
 
-    // Update gym with real ownerId
-    gym.ownerId = user._id;
-    await gym.save();
-
-    // Create member profile for owner (optional, for tracking)
+    // 4. Create member profile for owner
     await Member.create({
+      userId: user._id, // Add userId to member profile
       gymId: gym._id,
       firstName,
       lastName,
@@ -118,6 +118,7 @@ const login = async (req, res, next) => {
       userData.height = member.currentMetrics?.height || 0;
       userData.photo = member.photo || '';
       userData.preferences = member.preferences || { emailNotifications: true, pushNotifications: true, healthSync: false };
+      userData.assignedProtocol = member.assignedProtocol || { source: 'custom' };
     }
 
     return successResponse(res, {
@@ -187,6 +188,7 @@ const getMe = async (req, res, next) => {
       userData.height = member.currentMetrics?.height || 0;
       userData.photo = member.photo || '';
       userData.preferences = member.preferences || { emailNotifications: true, pushNotifications: true, healthSync: false };
+      userData.assignedProtocol = member.assignedProtocol || { source: 'custom' };
     }
 
     return successResponse(res, { user: userData, gym });
@@ -264,4 +266,51 @@ const updateMe = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, refreshToken, logout, getMe, updateMe };
+const crypto = require('crypto');
+const { registerSchema, loginSchema } = require('../validators/auth.validator');
+
+// @desc    Forgot Password - Send OTP
+// @route   POST /api/v1/auth/forgot-password
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    
+    // Always return success to prevent enumeration
+    if (!user) return successResponse(res, null, 200, { message: 'If an account exists, a reset code has been sent.' });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.inviteToken = otp; // Re-using inviteToken field for OTP logic simplicity
+    user.inviteTokenExpiry = Date.now() + 10 * 60 * 1000; // 10 mins
+    await user.save();
+
+    // In a real app, send email here. For now, we log it.
+    console.log(`[AUTH] Password Reset OTP for ${email}: ${otp}`);
+    
+    return successResponse(res, null, 200, { message: 'If an account exists, a reset code has been sent.' });
+  } catch (error) { next(error); }
+};
+
+// @desc    Reset Password with OTP
+// @route   POST /api/v1/auth/reset-password
+const resetPassword = async (req, res, next) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    const user = await User.findOne({ 
+      email, 
+      inviteToken: otp, 
+      inviteTokenExpiry: { $gt: Date.now() } 
+    });
+
+    if (!user) return errorResponse(res, 'Invalid or expired reset code', 400);
+
+    user.passwordHash = newPassword; // Model pre-save hook will hash it
+    user.inviteToken = undefined;
+    user.inviteTokenExpiry = undefined;
+    await user.save();
+
+    return successResponse(res, null, 200, { message: 'Password updated successfully. Access restored.' });
+  } catch (error) { next(error); }
+};
+
+module.exports = { register, login, refreshToken, logout, getMe, updateMe, forgotPassword, resetPassword };

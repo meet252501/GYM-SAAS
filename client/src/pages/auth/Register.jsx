@@ -47,7 +47,13 @@ export default function Register() {
       toast.success('Gym created successfully! 🎉');
       navigate('/admin');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Registration failed');
+      console.error('Registration error:', err);
+      const msg = err.response?.data?.message;
+      if (!err.response) {
+        toast.error('Database connection failed. Please ensure MongoDB is running.');
+      } else {
+        toast.error(msg || 'Registration failed. Please check your details.');
+      }
     } finally { setLoading(false); }
   };
 

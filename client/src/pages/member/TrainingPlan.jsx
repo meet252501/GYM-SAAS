@@ -92,13 +92,9 @@ function BioMetricTile({ icon, label, value, sub, color, change, delay = 0 }) {
 // ── Main Training Hub ───────────────────────────────────────────
 
 // ── Mock Initial Data (if API is empty) ──────────────────────
-const FALLBACK_EXERCISES = [
-  { _id: '1', name: 'Barbell Bench Press', muscle: 'chest', equipment: 'barbell', gifUrl: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Bench-Press.gif' },
-  { _id: '2', name: 'Deadlift', muscle: 'back', equipment: 'barbell', gifUrl: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Deadlift.gif' },
-  { _id: '3', name: 'Barbell Squat', muscle: 'legs', equipment: 'barbell', gifUrl: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/Barbell-Squat.gif' },
-  { _id: '4', name: 'Seated Cable Row', muscle: 'back', equipment: 'cable', gifUrl: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/Seated-Cable-Row.gif' },
-  { _id: '5', name: 'Dumbbell Bicep Curl', muscle: 'arms', equipment: 'dumbbell', gifUrl: 'https://fitnessprogramer.com/wp-content/uploads/2021/02/Dumbbell-Curl.gif' },
-];
+import localExercises from '../../data/exerciseLibrary';
+
+const FALLBACK_EXERCISES = localExercises.slice(0, 12);
 
 import { useLocation } from 'react-router-dom';
 

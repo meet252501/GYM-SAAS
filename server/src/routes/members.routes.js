@@ -24,6 +24,8 @@ router.route('/:id')
   .patch(authorize('owner', 'trainer'), upload.single('photo'), updateMember)
   .delete(authorize('owner'), deleteMember);
 
+router.patch('/:id/protocol', authorize('owner', 'trainer'), require('../controllers/members.controller').assignProtocol);
+
 router.get('/:id/qr', authorize('owner', 'trainer'), getMemberQR);
 
 module.exports = router;

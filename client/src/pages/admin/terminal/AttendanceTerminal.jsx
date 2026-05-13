@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Flame, Activity, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { attendanceApi } from '../../../api';
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ShieldCheck, Flame, Activity, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { attendanceApi } from "../../../api";
 
 export default function AttendanceTerminal() {
   const navigate = useNavigate();
-  const [pin, setPin] = useState('------');
+  const [pin, setPin] = useState("------");
   const [exitHoldTimer, setExitHoldTimer] = useState(null);
   const [timeLeft, setTimeLeft] = useState(30);
   const [recentAttendances, setRecentAttendances] = useState([]);
@@ -28,7 +28,7 @@ export default function AttendanceTerminal() {
     try {
       const { data } = await attendanceApi.getToday();
       if (data?.data) {
-        setRecentAttendances(prev => {
+        setRecentAttendances((prev) => {
           const newTop = data.data[0];
           const oldTop = prev[0];
           if (newTop && (!oldTop || oldTop._id !== newTop._id)) {
@@ -64,7 +64,7 @@ export default function AttendanceTerminal() {
   // Local countdown timer for visual feedback
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -75,15 +75,16 @@ export default function AttendanceTerminal() {
     const preventDefaults = (e) => {
       e.preventDefault();
     };
-    
+
     const preventShortcuts = (e) => {
       // Prevent Alt+F4, Ctrl+W, F11, etc.
       if (e.altKey || e.ctrlKey || e.metaKey) e.preventDefault();
-      if (['F1', 'F3', 'F5', 'F6', 'F7', 'F10', 'F11', 'F12'].includes(e.key)) e.preventDefault();
+      if (["F1", "F3", "F5", "F6", "F7", "F10", "F11", "F12"].includes(e.key))
+        e.preventDefault();
     };
 
-    window.addEventListener('contextmenu', preventDefaults);
-    window.addEventListener('keydown', preventShortcuts);
+    window.addEventListener("contextmenu", preventDefaults);
+    window.addEventListener("keydown", preventShortcuts);
 
     // Attempt Fullscreen
     const enterFS = async () => {
@@ -96,11 +97,11 @@ export default function AttendanceTerminal() {
       }
     };
 
-    window.addEventListener('click', enterFS, { once: true });
+    window.addEventListener("click", enterFS, { once: true });
 
     return () => {
-      window.removeEventListener('contextmenu', preventDefaults);
-      window.removeEventListener('keydown', preventShortcuts);
+      window.removeEventListener("contextmenu", preventDefaults);
+      window.removeEventListener("keydown", preventShortcuts);
     };
   }, []);
 
@@ -109,7 +110,7 @@ export default function AttendanceTerminal() {
     const timer = setTimeout(() => {
       if (window.confirm("Admin: Exit Kiosk Mode?")) {
         if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-        navigate('/admin/dashboard');
+        navigate("/admin/dashboard");
       }
     }, 5000);
     setExitHoldTimer(timer);
@@ -120,15 +121,22 @@ export default function AttendanceTerminal() {
     setExitHoldTimer(null);
   };
 
-
-
   return (
-    <div className="mobile-p-4" style={{ 
-      minHeight: '100vh', background: '#050505', color: '#fff', padding: '24px',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: 'Inter, sans-serif',
-      userSelect: 'none', touchAction: 'none'
-    }}>
-      
+    <div
+      className="mobile-p-4"
+      style={{
+        minHeight: "100vh",
+        background: "#050505",
+        color: "#fff",
+        padding: "24px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        fontFamily: "Inter, sans-serif",
+        userSelect: "none",
+        touchAction: "none",
+      }}
+    >
       {/* ── Scan Success Overlay ── */}
       <AnimatePresence>
         {latestCheckin && (
@@ -137,199 +145,489 @@ export default function AttendanceTerminal() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.05 }}
             style={{
-              position: 'fixed', inset: 0, zIndex: 9999,
-              background: 'rgba(16,185,129,0.95)',
-              backdropFilter: 'blur(10px)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              color: 'white', padding: '24px'
+              position: "fixed",
+              inset: 0,
+              zIndex: 9999,
+              background: "rgba(16,185,129,0.95)",
+              backdropFilter: "blur(10px)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              padding: "24px",
             }}
           >
-            <motion.div 
+            <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.1, type: 'spring' }}
+              transition={{ delay: 0.1, type: "spring" }}
               style={{
-                width: 200, height: 200, borderRadius: '50%', border: '8px solid white', overflow: 'hidden',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.5)', marginBottom: 32, background: 'rgba(0,0,0,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                width: 200,
+                height: 200,
+                borderRadius: "50%",
+                border: "8px solid white",
+                overflow: "hidden",
+                boxShadow: "0 20px 50px rgba(0,0,0,0.5)",
+                marginBottom: 32,
+                background: "rgba(0,0,0,0.2)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               {latestCheckin.memberId?.photo ? (
-                <img src={latestCheckin.memberId.photo} alt="Member" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img
+                  src={latestCheckin.memberId.photo}
+                  alt="Member"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
               ) : (
-                <span style={{ fontSize: '5rem', fontWeight: 900 }}>{latestCheckin.memberId?.firstName?.[0] || 'M'}</span>
+                <span style={{ fontSize: "5rem", fontWeight: 900 }}>
+                  {latestCheckin.memberId?.firstName?.[0] || "M"}
+                </span>
               )}
             </motion.div>
-            
-            <motion.h1 
-               initial={{ y: 20, opacity: 0 }}
-               animate={{ y: 0, opacity: 1 }}
-               transition={{ delay: 0.2 }}
-               style={{ fontSize: '3rem', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '2px', textAlign: 'center' }}
+
+            <motion.h1
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              style={{
+                fontSize: "3rem",
+                fontWeight: 900,
+                margin: 0,
+                textTransform: "uppercase",
+                letterSpacing: "2px",
+                textAlign: "center",
+              }}
             >
               ACCESS GRANTED
             </motion.h1>
-            
-            <motion.p 
-               initial={{ y: 20, opacity: 0 }}
-               animate={{ y: 0, opacity: 1 }}
-               transition={{ delay: 0.3 }}
-               style={{ fontSize: '1.5rem', fontWeight: 800, margin: '12px 0 0 0', opacity: 0.9, textAlign: 'center' }}
+
+            <motion.p
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              style={{
+                fontSize: "1.5rem",
+                fontWeight: 800,
+                margin: "12px 0 0 0",
+                opacity: 0.9,
+                textAlign: "center",
+              }}
             >
-              {latestCheckin.memberId?.firstName} {latestCheckin.memberId?.lastName}
+              {latestCheckin.memberId?.firstName}{" "}
+              {latestCheckin.memberId?.lastName}
             </motion.p>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Kiosk Header */}
-      <div style={{ width: '100%', maxWidth: 450, display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button 
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 450,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 40,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <button
             onClick={() => navigate(-1)}
-            style={{ 
-              width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid rgba(255,255,255,0.1)', color: '#fff', display: 'flex', 
-              alignItems: 'center', justifyContent: 'center', cursor: 'pointer' 
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
             }}
           >
             <ArrowLeft size={20} />
           </button>
-          <div 
-            onMouseDown={startExitTimer} 
-            onMouseUp={clearExitTimer} 
-            onTouchStart={startExitTimer} 
+          <div
+            onMouseDown={startExitTimer}
+            onMouseUp={clearExitTimer}
+            onTouchStart={startExitTimer}
             onTouchEnd={clearExitTimer}
-            style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'default' }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              cursor: "default",
+            }}
           >
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: "var(--primary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <Activity color="#fff" size={24} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.02em' }}>GymFlow <span style={{ color: 'var(--primary)' }}>Kiosk</span></h1>
-              <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Secure Access Terminal</div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "1.2rem",
+                  fontWeight: 900,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                GymFlow <span style={{ color: "var(--primary)" }}>Kiosk</span>
+              </h1>
+              <div
+                style={{
+                  fontSize: "0.65rem",
+                  color: "rgba(255,255,255,0.4)",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                }}
+              >
+                Secure Access Terminal
+              </div>
             </div>
           </div>
         </div>
-        <div style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: 10, fontSize: '0.7rem', fontWeight: 700, border: '1px solid rgba(255,255,255,0.1)' }}>
-          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <div
+          style={{
+            padding: "6px 12px",
+            background: "rgba(255,255,255,0.05)",
+            borderRadius: 10,
+            fontSize: "0.7rem",
+            fontWeight: 700,
+            border: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
+          {new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </div>
       </div>
 
-      <div style={{ width: '100%', maxWidth: 450, position: 'relative' }}>
-          <motion.div 
-            key="terminal"
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: 32, alignItems: 'center' }}
-          >
-            <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Open your GymFlow app</h2>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginTop: 8 }}>Enter the PIN below to check in</p>
-            </div>
+      <div style={{ width: "100%", maxWidth: 450, position: "relative" }}>
+        <motion.div
+          key="terminal"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 32,
+            alignItems: "center",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <h2 style={{ fontSize: "1.5rem", fontWeight: 800, margin: 0 }}>
+              Open your GymFlow app
+            </h2>
+            <p
+              style={{
+                color: "rgba(255,255,255,0.6)",
+                fontSize: "0.9rem",
+                marginTop: 8,
+              }}
+            >
+              Enter the PIN below to check in
+            </p>
+          </div>
 
-            {/* PIN Display */}
-            <div style={{ 
-              height: 140, width: '100%', background: 'rgba(255,255,255,0.02)', borderRadius: 32, border: '1px solid rgba(255,255,255,0.05)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, position: 'relative', overflow: 'hidden'
-            }}>
-               {/* Decorative background pulse */}
-               <motion.div animate={{ opacity: [0.02, 0.06, 0.02] }} transition={{ duration: 2, repeat: Infinity }} style={{ position: 'absolute', inset: 0, background: 'var(--primary)' }} />
-               
-               {pin.split('').map((char, i) => (
-                 <motion.div 
-                  key={`${pin}-${i}`}
-                  initial={{ y: -20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
-                  style={{ 
-                    width: 55, height: 75, borderRadius: 16, border: '2px solid rgba(245,158,11,0.3)',
-                    background: 'rgba(0,0,0,0.5)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary)'
+          {/* PIN Display */}
+          <div
+            style={{
+              height: 140,
+              width: "100%",
+              background: "rgba(255,255,255,0.02)",
+              borderRadius: 32,
+              border: "1px solid rgba(255,255,255,0.05)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 16,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {/* Decorative background pulse */}
+            <motion.div
+              animate={{ opacity: [0.02, 0.06, 0.02] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              style={{
+                position: "absolute",
+                inset: 0,
+                background: "var(--primary)",
+              }}
+            />
+
+            {pin.split("").map((char, i) => (
+              <motion.div
+                key={`${pin}-${i}`}
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                style={{
+                  width: 55,
+                  height: 75,
+                  borderRadius: 16,
+                  border: "2px solid rgba(245,158,11,0.3)",
+                  background: "rgba(0,0,0,0.5)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "2.5rem",
+                  fontWeight: 900,
+                  color: "var(--primary)",
+                }}
+              >
+                {char}
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Countdown indicator */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 8,
+              width: "100%",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "0.75rem",
+                fontWeight: 800,
+                color: "rgba(255,255,255,0.4)",
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+              }}
+            >
+              Refreshes in {timeLeft}s
+            </div>
+            <div
+              style={{
+                width: "100%",
+                height: 4,
+                background: "rgba(255,255,255,0.1)",
+                borderRadius: 2,
+                overflow: "hidden",
+              }}
+            >
+              <motion.div
+                initial={{ width: "100%" }}
+                animate={{ width: `${(timeLeft / 30) * 100}%` }}
+                transition={{ duration: 1, ease: "linear" }}
+                style={{ height: "100%", background: "var(--primary)" }}
+              />
+            </div>
+          </div>
+        </motion.div>
+        {/* LIVE FEED SECTION */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          style={{ marginTop: 40, width: "100%" }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 16,
+            }}
+          >
+            <div
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                background: "var(--success)",
+                animation: "pulse-glow 2s infinite",
+              }}
+            />
+            <h3
+              style={{
+                margin: 0,
+                fontSize: "0.8rem",
+                fontWeight: 900,
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                color: "var(--text-3)",
+              }}
+            >
+              Live Terminal Sync
+            </h3>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <AnimatePresence>
+              {recentAttendances.map((record) => (
+                <motion.div
+                  key={record._id}
+                  initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.05)",
+                    borderRadius: 16,
+                    padding: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                   }}
-                 >
-                   {char}
-                 </motion.div>
-               ))}
-            </div>
-
-            {/* Countdown indicator */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, width: '100%' }}>
-               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                 Refreshes in {timeLeft}s
-               </div>
-               <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, overflow: 'hidden' }}>
-                 <motion.div 
-                   initial={{ width: '100%' }}
-                   animate={{ width: `${(timeLeft / 30) * 100}%` }}
-                   transition={{ duration: 1, ease: "linear" }}
-                   style={{ height: '100%', background: 'var(--primary)' }}
-                 />
-               </div>
-            </div>
-          </motion.div>
-
-          {/* LIVE FEED SECTION */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-            style={{ marginTop: 40, width: '100%' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)', animation: 'pulse-glow 2s infinite' }} />
-              <h3 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-3)' }}>
-                Live Terminal Sync
-              </h3>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <AnimatePresence>
-                {recentAttendances.map((record) => (
-                  <motion.div
-                    key={record._id}
-                    initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    style={{
-                      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
-                      borderRadius: 16, padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-                    }}
+                >
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 12 }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.1)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        {record.memberId?.photo ? (
-                          <img src={record.memberId.photo} alt={record.memberId.firstName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.2rem' }}>{record.memberId?.firstName?.[0] || 'M'}</span>
-                        )}
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        background: "rgba(255,255,255,0.1)",
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "1px solid rgba(255,255,255,0.05)",
+                      }}
+                    >
+                      {record.memberId?.photo ? (
+                        <img
+                          src={record.memberId.photo}
+                          alt={record.memberId.firstName}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color: "var(--primary)",
+                            fontSize: "1.2rem",
+                          }}
+                        >
+                          {record.memberId?.firstName?.[0] || "M"}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: 800,
+                          fontSize: "1rem",
+                          color: "#fff",
+                        }}
+                      >
+                        {record.memberId?.firstName} {record.memberId?.lastName}
                       </div>
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '1rem', color: '#fff' }}>{record.memberId?.firstName} {record.memberId?.lastName}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--success)', fontWeight: 800, textTransform: 'uppercase', marginTop: 2 }}>Access Granted</div>
+                      <div
+                        style={{
+                          fontSize: "0.7rem",
+                          color: "var(--success)",
+                          fontWeight: 800,
+                          textTransform: "uppercase",
+                          marginTop: 2,
+                        }}
+                      >
+                        Access Granted
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-2)' }}>
-                        {new Date(record.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end', marginTop: 4, color: 'var(--primary)', fontSize: '0.7rem', fontWeight: 800 }}>
-                        <Flame size={12} /> {record.memberId?.streak || 0}
-                      </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div
+                      style={{
+                        fontSize: "0.85rem",
+                        fontWeight: 900,
+                        color: "var(--text-2)",
+                      }}
+                    >
+                      {new Date(record.checkedInAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              
-              {recentAttendances.length === 0 && (
-                <div style={{ textAlign: 'center', padding: 24, background: 'rgba(255,255,255,0.01)', borderRadius: 16, border: '1px dashed rgba(255,255,255,0.05)' }}>
-                  <p style={{ color: 'var(--text-4)', fontSize: '0.8rem', fontWeight: 700, margin: 0 }}>Waiting for secure connections...</p>
-                </div>
-              )}
-            </div>
-          </motion.div>        </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 4,
+                        justifyContent: "flex-end",
+                        marginTop: 4,
+                        color: "var(--primary)",
+                        fontSize: "0.7rem",
+                        fontWeight: 800,
+                      }}
+                    >
+                      <Flame size={12} /> {record.memberId?.streak || 0}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {recentAttendances.length === 0 && (
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: 24,
+                  background: "rgba(255,255,255,0.01)",
+                  borderRadius: 16,
+                  border: "1px dashed rgba(255,255,255,0.05)",
+                }}
+              >
+                <p
+                  style={{
+                    color: "var(--text-4)",
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                    margin: 0,
+                  }}
+                >
+                  Waiting for secure connections...
+                </p>
+              </div>
+            )}
+          </div>
+        </motion.div>{" "}
+      </div>
 
       {/* Footer Info */}
-      <div style={{ marginTop: 'auto', textAlign: 'center', paddingBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.2)', fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em' }}>
+      <div
+        style={{ marginTop: "auto", textAlign: "center", paddingBottom: 20 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            color: "rgba(255,255,255,0.2)",
+            fontSize: "0.7rem",
+            fontWeight: 800,
+            letterSpacing: "0.1em",
+          }}
+        >
           <ShieldCheck size={14} /> ENCRYPTED PROTOCOL ACTIVE
         </div>
       </div>

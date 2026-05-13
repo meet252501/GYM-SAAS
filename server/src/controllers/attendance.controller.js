@@ -88,6 +88,15 @@ const pinCheckin = async (req, res, next) => {
     // Update streak
     await updateStreak(member);
 
+    // Emit live update
+    if (global.io) {
+      global.io.to(member.gymId.toString()).emit('attendance_update', {
+        type: 'check_in',
+        member: { id: member._id, firstName: member.firstName, lastName: member.lastName, photo: member.photo },
+        time: new Date()
+      });
+    }
+
     return successResponse(res, {
       attendance,
       member: {
@@ -244,6 +253,36 @@ const dynamicPinCheckin = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+const exportAttendance = async (req, res, next) => {
+  try {
+    const { from, to } = req.query;
+    const query = { gymId: req.user.gymId };
+    
+    if (from || to) {
+      query.checkedInAt = {};
+      if (from) query.checkedInAt.$gte = new Date(from);
+      if (to) query.checkedInAt.$lte = new Date(to);
+    }
+
+    const records = await Attendance.find(query)
+      .populate('memberId', 'firstName lastName memberId')
+      .sort({ checkedInAt: -1 });
+
+    let csv = 'Date,Time,Member ID,Name,Method,Status\n';
+    records.forEach(r => {
+      const date = r.checkedInAt.toISOString().split('T')[0];
+      const time = r.checkedInAt.toTimeString().split(' ')[0];
+      const memberId = r.memberId?.memberId || 'N/A';
+      const name = r.memberId ? `${r.memberId.firstName} ${r.memberId.lastName}` : 'Deleted Member';
+      csv += `${date},${time},${memberId},"${name}",${r.method},${r.status}\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=attendance-export-${new Date().toISOString().split('T')[0]}.csv`);
+    return res.status(200).send(csv);
+  } catch (error) { next(error); }
+};
+
 module.exports = { 
   pinCheckin,
   manualCheckin, 
@@ -252,5 +291,6 @@ module.exports = {
   selfCheckin,
   getMyAttendance,
   getKioskPin,
-  dynamicPinCheckin
+  dynamicPinCheckin,
+  exportAttendance
 };

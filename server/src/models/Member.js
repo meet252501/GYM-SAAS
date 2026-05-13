@@ -76,6 +76,13 @@ const memberSchema = new mongoose.Schema({
   aiUsage: {
     dailyCount: { type: Number, default: 0 },
     lastUsedDate: { type: String, default: () => new Date().toISOString().split('T')[0] }
+  },
+
+  // Assigned Workouts / Programs
+  assignedProtocol: {
+    source: { type: String, enum: ['ai', 'coach', 'custom'], default: 'custom' },
+    programId: { type: mongoose.Schema.Types.ObjectId, ref: 'Program' },
+    lastUpdated: { type: Date, default: Date.now }
   }
 }, { timestamps: true });
 

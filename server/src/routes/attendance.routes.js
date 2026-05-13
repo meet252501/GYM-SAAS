@@ -21,6 +21,7 @@ router.get('/my', getMyAttendance);
 
 // Admin/Staff routes
 router.get('/kiosk-pin', authorize('owner', 'trainer'), getKioskPin);
+router.get('/export', authorize('owner', 'trainer'), require('../controllers/attendance.controller').exportAttendance);
 router.post('/pin-checkin', authorize('owner', 'trainer'), pinCheckin);
 router.post('/manual', authorize('owner', 'trainer'), manualCheckin);
 router.get('/', authorize('owner', 'trainer'), getAttendance);

@@ -122,9 +122,25 @@ const downloadInvoice = async (req, res, next) => {
   } catch (error) { next(error); }
 };
 
+// @desc    Initialize a Stripe Checkout session (Placeholder)
+// @route   POST /api/v1/payments/stripe/checkout
+// @access  Private (Member)
+const createStripeCheckout = async (req, res, next) => {
+  try {
+    const { planId } = req.body;
+    // In a real implementation, you would use require('stripe')(key)
+    // and create a session. For now, we return a mock URL.
+    return successResponse(res, {
+      sessionId: 'mock_session_id_' + Date.now(),
+      checkoutUrl: `https://checkout.stripe.com/pay/mock_${planId}`
+    }, 200, 'Stripe integration ready for API Key configuration.');
+  } catch (error) { next(error); }
+};
+
 module.exports = {
   getPayments,
   recordPayment,
   getPaymentStats,
-  downloadInvoice
+  downloadInvoice,
+  createStripeCheckout
 };
