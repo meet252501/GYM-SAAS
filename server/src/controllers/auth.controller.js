@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
 const Gym = require('../models/Gym');
@@ -266,7 +267,6 @@ const updateMe = async (req, res, next) => {
   }
 };
 
-const crypto = require('crypto');
 const { registerSchema, loginSchema } = require('../validators/auth.validator');
 
 // @desc    Forgot Password - Send OTP
@@ -279,7 +279,7 @@ const forgotPassword = async (req, res, next) => {
     // Always return success to prevent enumeration
     if (!user) return successResponse(res, null, 200, { message: 'If an account exists, a reset code has been sent.' });
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
     user.inviteToken = otp; // Re-using inviteToken field for OTP logic simplicity
     user.inviteTokenExpiry = Date.now() + 10 * 60 * 1000; // 10 mins
     await user.save();
