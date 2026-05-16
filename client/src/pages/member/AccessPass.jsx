@@ -13,6 +13,7 @@ import CyberMatrix from '../../components/ui/CyberMatrix';
 import BackButton from '../../components/ui/BackButton';
 import BentoCard from '../../components/ui/BentoCard';
 import { QRCodeSVG } from 'qrcode.react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 const PLAN_CONFIG = {
   Elite:   { color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)',  Icon: Crown, gradient: 'linear-gradient(135deg,#F59E0B,#D97706)' },
@@ -108,6 +109,41 @@ export default function AccessPass() {
       toast.error(err.response?.data?.message || 'Invalid or expired PIN. Please try again.');
     }
   };
+
+  useEffect(() => {
+    if (scanModal) {
+      const scanner = new Html5QrcodeScanner(
+        "reader",
+        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+        false
+      );
+
+      scanner.render(
+        async (decodedText) => {
+          scanner.clear();
+          setScanModal(false);
+          toast.loading('Verifying QR Code...');
+          try {
+            await attendanceApi.mark(); // Marking attendance directly for this gym
+            toast.dismiss();
+            toast.success('Check-in successful via QR!');
+            const { data } = await attendanceApi.getMy({ limit: 5 });
+            setHistory(data.data || []);
+          } catch (err) {
+            toast.dismiss();
+            toast.error(err.response?.data?.message || 'Failed to check-in with this QR code.');
+          }
+        },
+        (error) => {
+          // Ignore scanning errors (happens when no code is visible)
+        }
+      );
+
+      return () => {
+        scanner.clear().catch(e => console.log('Failed to clear scanner', e));
+      };
+    }
+  }, [scanModal]);
 
   return (
     <div className="mobile-px-4" style={{ position: 'relative', minHeight: 'calc(100vh - 152px)', padding: '12px 0 24px 0' }}>
@@ -502,31 +538,33 @@ export default function AccessPass() {
             style={{
               position: 'fixed', inset: 0, zIndex: 300,
               background: '#000',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             }}
           >
             <div style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10 }}>
               <button onClick={() => setScanModal(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', width: '40px', height: '40px', color: 'white', cursor: 'pointer' }}><X /></button>
             </div>
             
-            <div style={{ textAlign: 'center', color: 'white' }}>
-              <div style={{ width: '280px', height: '280px', border: '2px solid var(--primary)', borderRadius: '32px', position: 'relative', overflow: 'hidden', margin: '0 auto 32px' }}>
-                <motion.div 
-                  animate={{ top: ['0%', '100%', '0%'] }} 
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-                  style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'var(--primary)', boxShadow: '0 0 15px var(--primary)', zIndex: 2 }} 
-                />
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
-                  <Camera size={48} color="rgba(255,255,255,0.2)" />
-                </div>
-              </div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>INITIALIZING SCAN</h2>
-              <p style={{ color: 'var(--text-4)', fontSize: '0.9rem', maxWidth: '240px', margin: '0 auto' }}>Position the Terminal QR code within the frame to synchronize.</p>
+            <div style={{ textAlign: 'center', color: 'white', width: '100%', padding: '0 24px' }}>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>SCAN TERMINAL QR</h2>
+              <p style={{ color: 'var(--text-4)', fontSize: '0.9rem', maxWidth: '240px', margin: '0 auto 24px' }}>Point your camera at the gym's front desk terminal.</p>
               
-              <div style={{ marginTop: '40px', color: 'var(--primary)', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px' }}>
-                PROTOCOL_LINKING_ACTIVE...
+              <div style={{ width: '100%', maxWidth: '300px', margin: '0 auto', background: 'white', borderRadius: '16px', overflow: 'hidden' }}>
+                <div id="reader" style={{ width: '100%' }}></div>
+              </div>
+              
+              <div style={{ marginTop: '24px', color: 'var(--primary)', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px' }}>
+                CAMERA_LINK_ACTIVE
               </div>
             </div>
+            
+            {/* Inject minimal CSS to fix html5-qrcode ugly defaults */}
+            <style>{`
+              #reader button { padding: 10px 16px; background: var(--primary); border: none; border-radius: 8px; color: black; font-weight: 800; cursor: pointer; margin-top: 10px; }
+              #reader select { padding: 8px; border-radius: 6px; margin-bottom: 10px; width: 100%; }
+              #reader a { display: none; }
+              #reader__scan_region { min-height: 200px; }
+            `}</style>
           </motion.div>
         )}
       </AnimatePresence>
