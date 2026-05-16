@@ -15,7 +15,7 @@ const NAV = [
   { path: '/admin/classes', icon: Dumbbell, label: 'Classes' },
   { path: '/admin/programs', icon: ClipboardList, label: 'Programs' },
   { path: '/admin/diet-plans', icon: Utensils, label: 'Diet Plans' },
-  { path: '/member/scan', icon: QrCode, label: 'Attendance Terminal' },
+  { path: '/admin/terminal', icon: QrCode, label: 'Attendance Terminal' },
   { path: '/admin/payments', icon: CreditCard, label: 'Payments' },
   { path: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   { path: '/admin/leaderboard', icon: Trophy, label: 'Leaderboard' },
