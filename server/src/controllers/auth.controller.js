@@ -3,8 +3,16 @@ const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
 const Gym = require('../models/Gym');
 const Member = require('../models/Member');
+const { MembershipPlan } = require('../models/Membership');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const emailService = require('../services/email.service');
+
+// Default plans auto-created for every new gym
+const DEFAULT_PLANS = [
+  { name: 'Monthly',   duration: { value: 1,  unit: 'month' }, price: 999,  description: 'Standard monthly membership' },
+  { name: 'Quarterly', duration: { value: 3,  unit: 'month' }, price: 2499, description: '3-month membership — save 17%' },
+  { name: 'Annual',    duration: { value: 12, unit: 'month' }, price: 7999, description: 'Full-year membership — best value' },
+];
 
 // Generate tokens
 const generateTokens = (user) => {
@@ -63,13 +71,18 @@ const register = async (req, res, next) => {
 
     // 4. Create member profile for owner
     await Member.create({
-      userId: user._id, // Add userId to member profile
+      userId: user._id,
       gymId: gym._id,
       firstName,
       lastName,
       membershipStatus: 'active',
       isActive: true
     });
+
+    // 5. Auto-seed default membership plans so new gym can enroll members immediately
+    await MembershipPlan.insertMany(
+      DEFAULT_PLANS.map(p => ({ ...p, gymId: gym._id, isActive: true }))
+    );
 
     const { accessToken, refreshToken } = generateTokens(user);
 
