@@ -52,7 +52,7 @@ export default function Login() {
         </div>
 
         <h1 className="auth-title">Welcome back</h1>
-        <p className="auth-desc">Sign in to manage your gym</p>
+        <p className="auth-desc">Sign in to your account</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
@@ -99,7 +99,7 @@ export default function Login() {
         </form>
 
         <div className="auth-footer">
-          New gym? <Link to="/register" className="auth-link">Create account</Link>
+          <span style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>Member? Your credentials were sent by your gym via email.</span>
         </div>
       </motion.div>
 

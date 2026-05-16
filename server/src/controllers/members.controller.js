@@ -5,6 +5,19 @@ const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const jwt = require('jsonwebtoken');
+const emailService = require('../services/email.service');
+const crypto = require('crypto');
+
+// ── Helpers ────────────────────────────────────────────────────
+const generateTempPassword = () => {
+  // e.g. Gym@4f2a — easy to type, meets most password rules
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  const rand  = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  return `Gym@${rand}`;
+};
+
+const generateAccessPin = () =>
+  String(Math.floor(100000 + Math.random() * 900000)); // 6-digit PIN
 
 // @route   GET /api/v1/members
 const getMembers = async (req, res, next) => {
@@ -38,15 +51,23 @@ const getMembers = async (req, res, next) => {
 // @route   POST /api/v1/members
 const createMember = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, password, phone, dateOfBirth, gender, goal, fitnessLevel, planId } = req.body;
+    const { firstName, lastName, email, phone, dateOfBirth, gender, goal, fitnessLevel, planId } = req.body;
 
-    // Create user account if email + password provided
-    let userId;
-    if (email && password) {
+    // ── Auto-generate credentials (admin-only account creation) ──
+    let userId, tempPassword, accessPin;
+
+    if (email) {
       const existing = await User.findOne({ email });
       if (existing) return errorResponse(res, 'Email already registered', 409);
+
+      tempPassword = generateTempPassword();   // e.g. Gym@4f2a
+      accessPin    = generateAccessPin();      // 6-digit PIN for kiosk
+
       const user = await User.create({
-        email, passwordHash: password, role: 'member', gymId: req.user.gymId
+        email,
+        passwordHash: tempPassword,
+        role: 'member',
+        gymId: req.user.gymId
       });
       userId = user._id;
     }
@@ -55,48 +76,68 @@ const createMember = async (req, res, next) => {
       gymId: req.user.gymId,
       userId,
       firstName, lastName, phone, dateOfBirth, gender,
-      goal: goal || 'general_fitness',
+      goal:         goal         || 'general_fitness',
       fitnessLevel: fitnessLevel || 'beginner',
+      accessPin,
       photo: req.file ? req.file.path : undefined
     });
 
-    // Assign membership if plan provided
+    // ── Assign membership plan ────────────────────────────────────
     if (planId) {
       const plan = await MembershipPlan.findById(planId);
       if (plan) {
         const startDate = new Date();
-        const endDate = new Date();
-        if (plan.duration.unit === 'month') endDate.setMonth(endDate.getMonth() + plan.duration.value);
-        else if (plan.duration.unit === 'year') endDate.setFullYear(endDate.getFullYear() + plan.duration.value);
-        else if (plan.duration.unit === 'day') endDate.setDate(endDate.getDate() + plan.duration.value);
+        const endDate   = new Date();
+        if      (plan.duration.unit === 'month') endDate.setMonth(endDate.getMonth() + plan.duration.value);
+        else if (plan.duration.unit === 'year')  endDate.setFullYear(endDate.getFullYear() + plan.duration.value);
+        else if (plan.duration.unit === 'day')   endDate.setDate(endDate.getDate() + plan.duration.value);
 
         const membership = await Membership.create({
           memberId: member._id, gymId: req.user.gymId,
           planId, planName: plan.name, startDate, endDate, status: 'active', amount: plan.price
         });
 
-        // CREATE PAYMENT RECORD FOR REVENUE TRACKING
         await Payment.create({
-          gymId: req.user.gymId,
-          memberId: member._id,
-          memberName: `${member.firstName} ${member.lastName}`,
-          amount: plan.price,
-          type: 'membership',
-          status: 'completed',
-          gateway: 'cash', // Default for admin-added members
+          gymId:        req.user.gymId,
+          memberId:     member._id,
+          memberName:   `${member.firstName} ${member.lastName}`,
+          amount:       plan.price,
+          type:         'membership',
+          status:       'completed',
+          gateway:      'cash',
           membershipId: membership._id,
-          paidAt: new Date(),
-          notes: `Enrolled in ${plan.name} by ${req.user.role}`
+          paidAt:       new Date(),
+          notes:        `Enrolled in ${plan.name} by ${req.user.role}`
         });
 
         member.currentMembershipId = membership._id;
-        member.membershipStatus = 'active';
-        member.membershipExpiry = endDate;
+        member.membershipStatus    = 'active';
+        member.membershipExpiry    = endDate;
         await member.save();
       }
     }
 
-    return successResponse(res, member, 201);
+    // ── Send welcome email with credentials ──────────────────────
+    if (email && tempPassword) {
+      try {
+        await emailService.sendMemberWelcomeEmail({
+          firstName,
+          email,
+          tempPassword,
+          accessPin,
+          appUrl: process.env.CLIENT_URL || 'https://gymflow-lilac-seven.vercel.app'
+        });
+      } catch (emailErr) {
+        // Non-fatal — member is created, email failure is logged
+        console.error('Welcome email failed:', emailErr.message);
+      }
+    }
+
+    return successResponse(res, {
+      ...member.toObject(),
+      // Return plaintext credentials ONCE so admin can share them
+      _credentials: email ? { email, tempPassword, accessPin } : undefined
+    }, 201);
   } catch (error) { next(error); }
 };
 
