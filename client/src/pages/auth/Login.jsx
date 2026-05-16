@@ -46,13 +46,13 @@ export default function Login() {
             <Dumbbell size={28} strokeWidth={2.5} />
           </div>
           <div>
-            <div className="auth-logo-name">GymCore Pro</div>
-            <div className="auth-logo-sub">Sign in to your account</div>
+            <div className="auth-logo-name">GymCore Admin</div>
+            <div className="auth-logo-sub">Sign in to your owner dashboard</div>
           </div>
         </div>
 
         <h1 className="auth-title">Welcome back 👋</h1>
-        <p className="auth-desc">Enter your credentials to continue</p>
+        <p className="auth-desc">Enter your admin credentials to continue</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
