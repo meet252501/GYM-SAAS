@@ -94,12 +94,12 @@ class EmailService {
     </div>
 
     <!-- CTA -->
-    <a href="${appUrl}/member-login" style="display:block;background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;text-decoration:none;text-align:center;padding:16px;border-radius:12px;font-weight:800;font-size:15px;letter-spacing:0.5px;">
+    <a href="${appUrl}/login" style="display:block;background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;text-decoration:none;text-align:center;padding:16px;border-radius:12px;font-weight:800;font-size:15px;letter-spacing:0.5px;">
       Open Member Portal →
     </a>
 
     <p style="color:#444;font-size:12px;text-align:center;margin-top:24px;">
-      Login at: ${appUrl}/member-login
+      Login at: ${appUrl}/login
     </p>
   </div>
 

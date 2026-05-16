@@ -89,7 +89,8 @@ function App() {
           <Routes>
             {/* Public */}
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-            <Route path="/member-login" element={<PublicRoute><MemberLogin /></PublicRoute>} />
+            {/* /member-login redirects to /login — single unified login for admins and members */}
+            <Route path="/member-login" element={<Navigate to="/login" replace />} />
             {/* /register is for gym owner signup only — members are added by admin */}
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 

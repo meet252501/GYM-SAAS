@@ -47,12 +47,12 @@ export default function Login() {
           </div>
           <div>
             <div className="auth-logo-name">GymFlow Pro</div>
-            <div className="auth-logo-sub">Admin Portal</div>
+            <div className="auth-logo-sub">Sign in to your account</div>
           </div>
         </div>
 
-        <h1 className="auth-title">Welcome back</h1>
-        <p className="auth-desc">Sign in to your account</p>
+        <h1 className="auth-title">Welcome back 👋</h1>
+        <p className="auth-desc">Enter your credentials to continue</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
@@ -99,7 +99,9 @@ export default function Login() {
         </form>
 
         <div className="auth-footer">
-          <span style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>Member? Your credentials were sent by your gym via email.</span>
+          <span style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>
+            New to GymFlow? Your gym admin will send you login credentials.
+          </span>
         </div>
       </motion.div>
 
