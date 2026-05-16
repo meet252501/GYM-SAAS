@@ -18,7 +18,7 @@ class InvoiceService {
         doc
           .fillColor('#444444')
           .fontSize(20)
-          .text(gym.name || 'GymFlow Pro', 50, 57)
+          .text(gym.name || 'GymCore Pro', 50, 57)
           .fontSize(10)
           .text(gym.address || 'Gym Address', 200, 50, { align: 'right' })
           .text(gym.phone || 'Gym Contact', 200, 65, { align: 'right' })
@@ -79,7 +79,7 @@ class InvoiceService {
         // Footer
         doc
           .fontSize(10)
-          .text('Thank you for choosing GymFlow Pro. Stay Fit!', 50, 700, { align: 'center', width: 500 });
+          .text('Thank you for choosing GymCore Pro. Stay Fit!', 50, 700, { align: 'center', width: 500 });
 
         doc.end();
       } catch (error) {

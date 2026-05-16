@@ -163,7 +163,7 @@ export default function AdminAI() {
                 <Bot size={16} color="white" />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-1)' }}>GymFlow Intelligence</div>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-1)' }}>GymCore Intelligence</div>
                 <div style={{ fontSize: '0.68rem', color: '#A855F7', fontWeight: 600 }}>
                   Admin AI · Unlimited · {loading ? 'Thinking…' : 'Online'}
                 </div>

@@ -233,7 +233,7 @@ export default function AttendanceTerminal() {
             </div>
             <div>
               <h1 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900, letterSpacing: "-0.02em" }}>
-                GymFlow <span style={{ color: "var(--primary)" }}>Terminal</span>
+                GymCore <span style={{ color: "var(--primary)" }}>Terminal</span>
               </h1>
               <div style={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.4)", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                 Secure Access Node

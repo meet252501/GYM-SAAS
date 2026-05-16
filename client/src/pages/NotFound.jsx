@@ -88,7 +88,7 @@ export default function NotFound() {
           boxShadow: '0 8px 24px rgba(245,158,11,0.35)',
         }}
       >
-        💪 Back to GymFlow
+        💪 Back to GymCore
       </motion.button>
     </div>
   );

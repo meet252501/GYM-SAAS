@@ -46,7 +46,7 @@ export default function Login() {
             <Dumbbell size={28} strokeWidth={2.5} />
           </div>
           <div>
-            <div className="auth-logo-name">GymFlow Pro</div>
+            <div className="auth-logo-name">GymCore Pro</div>
             <div className="auth-logo-sub">Sign in to your account</div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 {
-  "name": "gymflow-pro-server",
+  "name": "gymcore-pro-server",
   "version": "1.0.0",
-  "description": "GymFlow Pro Backend API",
+  "description": "GymCore Pro Backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

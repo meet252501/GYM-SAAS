@@ -172,7 +172,7 @@ const generateRecurringSessions = async () => {
 };
 
 /**
- * Initialize all cron jobs for GymFlow Pro
+ * Initialize all cron jobs for GymCore Pro
  */
 const initCronJobs = () => {
   // Expiration check: Daily 9 AM

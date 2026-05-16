@@ -15,7 +15,7 @@ const seedProduction = async () => {
     let gym = await Gym.findOne();
     if (!gym) {
       gym = await Gym.create({
-        name: 'GymFlow Elite HQ',
+        name: 'GymCore Elite HQ',
         address: '123 Cyber Street, Mumbai',
         contactEmail: 'admin@gymflow.pro',
         subscriptionPlan: 'enterprise'

@@ -40,7 +40,7 @@ app.use(cors({
       process.env.CLIENT_URL,
       'http://localhost:5173',
       'http://localhost:3000',
-      'https://gymflow-lilac-seven.vercel.app',
+      'https://gymcore.vercel.app',
       'https://gymflow.pages.dev',
     ].filter(Boolean);
     // Allow requests with no origin (mobile apps, curl, Postman)

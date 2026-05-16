@@ -20,7 +20,7 @@ function ruleBasedReply(msg) {
   for (const r of RULES) {
     if (r.keys.some(k => q.includes(k))) return r.reply;
   }
-  return '🤖 **GymFlow AI** is ready.\n\nAsk me about:\n- **Workouts**: chest, legs, back, shoulders\n- **Cardio**: HIIT, fat loss\n- **Nutrition**: protein, diet, calories\n- **Recovery**: sleep, soreness\n\n_Example: "Give me a chest workout"_';
+  return '🤖 **GymCore AI** is ready.\n\nAsk me about:\n- **Workouts**: chest, legs, back, shoulders\n- **Cardio**: HIIT, fat loss\n- **Nutrition**: protein, diet, calories\n- **Recovery**: sleep, soreness\n\n_Example: "Give me a chest workout"_';
 }
 
 /**

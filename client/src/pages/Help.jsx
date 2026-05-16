@@ -42,7 +42,7 @@ export default function Help() {
         
         <header style={{ marginBottom: 48 }}>
           <h1 style={{ fontSize: '2.5rem', fontWeight: 900, margin: 0 }}>Command <span style={{ color: 'var(--primary)' }}>Support</span></h1>
-          <p style={{ color: 'var(--text-3)', fontSize: '1.1rem', marginTop: 8 }}>Knowledge base for the GymFlow Pro ecosystem</p>
+          <p style={{ color: 'var(--text-3)', fontSize: '1.1rem', marginTop: 8 }}>Knowledge base for the GymCore Pro ecosystem</p>
         </header>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 48 }}>

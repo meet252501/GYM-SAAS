@@ -125,7 +125,7 @@ const createMember = async (req, res, next) => {
           email,
           tempPassword,
           accessPin,
-          appUrl: process.env.CLIENT_URL || 'https://gymflow-lilac-seven.vercel.app'
+          appUrl: process.env.CLIENT_URL || 'https://gymcore.vercel.app'
         });
       } catch (emailErr) {
         // Non-fatal — member is created, email failure is logged

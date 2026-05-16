@@ -74,7 +74,7 @@ const runSeed = async () => {
 
     // 2. Create Global Gym
     const gym = await Gym.create({
-      name: 'GymFlow Elite HQ',
+      name: 'GymCore Elite HQ',
       address: { street: 'Main Tech Park', city: 'Metropolis', state: 'CA', pincode: '90001' },
       email: 'hq@gymflow.io',
       ownerId: new mongoose.Types.ObjectId() // Placeholder

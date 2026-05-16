@@ -29,7 +29,7 @@ class LocalGymAI {
     async chat(prompt, history = []) {
         if (!this.generator) throw new Error("Local AI not initialized");
 
-        const systemPrompt = `You are the GymFlow Neural Coach. You specialize in gym training, biomechanics, and nutrition. 
+        const systemPrompt = `You are the GymCore Neural Coach. You specialize in gym training, biomechanics, and nutrition. 
         Keep responses concise, technical, and motivating. Limit to 3 sentences. 
         Current Context: Local Basement Mode.`;
 

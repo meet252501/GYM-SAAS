@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'GymFlow Pro',
-        short_name: 'GymFlow',
+        name: 'GymCore Pro',
+        short_name: 'GymCore',
         description: 'Elite Gym Management & AI Fitness Companion',
         theme_color: '#0A0A0B',
         background_color: '#0A0A0B',

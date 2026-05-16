@@ -11,7 +11,7 @@ export default function AppSettings() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '8px' }}>Mobile App Settings</h1>
-          <p className="text-faint">Manage GymFlow Mobile App access for your members.</p>
+          <p className="text-faint">Manage GymCore Mobile App access for your members.</p>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ export default function AppSettings() {
             border: '2px solid rgba(245,158,11,0.4)',
           }}>
             <QRCodeSVG 
-              value={`https://gymflow.app/register?gymId=${user?.gymId || ''}&source=desk_qr`} 
+              value={`${window.location.origin}/register?gymId=${user?.gymId || ''}&source=desk_qr`} 
               size={180} 
               bgColor="#ffffff" 
               fgColor="#09090B" 
@@ -110,7 +110,7 @@ export default function AppSettings() {
               <div>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 6px' }}>Active App Users</h3>
                 <p className="text-faint" style={{ fontSize: '0.85rem', marginBottom: '12px' }}>
-                  482 members are currently using the GymFlow mobile app.
+                  482 members are currently using the GymCore mobile app.
                 </p>
                 <button className="btn btn-ghost btn-sm" style={{ color: '#3b82f6', padding: 0 }}>
                   View Usage Analytics <ArrowRight size={14} style={{ marginLeft: '4px' }} />

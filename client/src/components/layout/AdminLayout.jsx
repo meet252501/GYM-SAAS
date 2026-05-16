@@ -76,7 +76,7 @@ export default function AdminLayout({ children }) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const pageTitle = NAV.find(n => n.exact ? pathname === n.path : pathname.startsWith(n.path))?.label || 'GymFlow Pro';
+  const pageTitle = NAV.find(n => n.exact ? pathname === n.path : pathname.startsWith(n.path))?.label || 'GymCore Pro';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
@@ -100,7 +100,7 @@ export default function AdminLayout({ children }) {
           <AnimatePresence>
             {!collapsed && (
               <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: 'var(--text-1)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>GymFlow</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '1.1rem', color: 'var(--text-1)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>GymCore</div>
                 <div style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', marginTop: 2 }}>Quantum Admin</div>
               </motion.div>
             )}

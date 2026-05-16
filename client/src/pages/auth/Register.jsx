@@ -87,7 +87,7 @@ export default function Register() {
           </button>
           <div className="auth-logo-icon"><Dumbbell size={26} strokeWidth={2.5} /></div>
           <div>
-            <div className="auth-logo-name">GymFlow Pro</div>
+            <div className="auth-logo-name">GymCore Pro</div>
             <div className="auth-logo-sub">New gym setup</div>
           </div>
         </div>

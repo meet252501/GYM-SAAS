@@ -160,7 +160,7 @@ export default function MemberLayout({ children }) {
               background: 'linear-gradient(90deg, #FBB040, #fff)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             }}>
-              GymFlow
+              GymCore
             </div>
             <div style={{
               fontSize: '9px', fontWeight: 700,

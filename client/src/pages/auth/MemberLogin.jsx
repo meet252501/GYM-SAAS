@@ -117,7 +117,7 @@ export default function MemberLogin() {
               fontSize: '1.15rem', fontWeight: 900, letterSpacing: '-0.5px',
               background: 'linear-gradient(90deg, #FBB040, #fff)',
               WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            }}>GymFlow Pro</div>
+            }}>GymCore Pro</div>
             <div style={{ fontSize: '10px', color: '#F59E0B', fontWeight: 800, letterSpacing: '2.5px', textTransform: 'uppercase' }}>
               Member Portal
             </div>

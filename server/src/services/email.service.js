@@ -5,7 +5,7 @@ const logger = require('../utils/logger');
 let resend = null;
 if (process.env.RESEND_API_KEY) {
   resend = new Resend(process.env.RESEND_API_KEY);
-  logger.info('✅ Email service ready via Resend — sender: GymFlow Pro <onboarding@resend.dev>');
+  logger.info('✅ Email service ready via Resend — sender: GymCore Pro <onboarding@resend.dev>');
 } else {
   logger.warn('⚠️  RESEND_API_KEY not set — emails will be skipped (member credentials shown in API response only)');
 }
@@ -19,7 +19,7 @@ class EmailService {
     }
     try {
       const { data, error } = await resend.emails.send({
-        from: 'GymFlow Pro <onboarding@resend.dev>', // Free Resend domain — works immediately
+        from: 'GymCore Pro <onboarding@resend.dev>', // Free Resend domain — works immediately
         to,
         subject,
         text,
@@ -36,11 +36,11 @@ class EmailService {
 
   // ── Gym owner signup welcome ──────────────────────────────────
   async sendWelcomeEmail({ firstName, email }) {
-    const clientUrl = process.env.CLIENT_URL || 'https://gymflow-lilac-seven.vercel.app';
+    const clientUrl = process.env.CLIENT_URL || 'https://gymcore.vercel.app';
     return this.sendEmail(
       email,
-      `Welcome to GymFlow Pro, ${firstName}!`,
-      `Your gym is now live on GymFlow Pro.`,
+      `Welcome to GymCore Pro, ${firstName}!`,
+      `Your gym is now live on GymCore Pro.`,
       `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'Segoe UI',sans-serif;">
@@ -49,7 +49,7 @@ class EmailService {
   <div style="padding:40px;">
     <h2 style="color:#fff;margin:0 0 8px;font-size:24px;">Welcome, ${firstName}! 🚀</h2>
     <p style="color:#888;font-size:15px;line-height:1.6;margin:0 0 32px;">
-      Your gym is now officially live on <strong>GymFlow Pro</strong>. You have unlocked the ultimate command center to manage members, process memberships, and deploy AI-driven training.
+      Your gym is now officially live on <strong>GymCore Pro</strong>. You have unlocked the ultimate command center to manage members, process memberships, and deploy AI-driven training.
     </p>
     <div style="background:#1a1a24;border:1px solid #2a2a3a;border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
       <div style="color:#F59E0B;font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">SYSTEM STATUS</div>
@@ -60,7 +60,7 @@ class EmailService {
     </a>
   </div>
   <div style="padding:20px 40px;border-top:1px solid #1a1a24;text-align:center;">
-    <p style="color:#333;font-size:12px;margin:0;">GymFlow Pro · The Future of Fitness</p>
+    <p style="color:#333;font-size:12px;margin:0;">GymCore Pro · The Future of Fitness</p>
   </div>
 </div>
 </body>
@@ -76,9 +76,9 @@ class EmailService {
 <div style="max-width:560px;margin:40px auto;background:#111118;border-radius:20px;overflow:hidden;border:1px solid #222;">
 
   <!-- Header Image -->
-  <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop" alt="GymFlow Training" style="width:100%;height:160px;object-fit:cover;display:block;" />
+  <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop" alt="GymCore Training" style="width:100%;height:160px;object-fit:cover;display:block;" />
   <div style="background:linear-gradient(135deg,#F59E0B,#EF4444);padding:16px 40px;">
-    <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;">GymFlow Pro</div>
+    <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;">GymCore Pro</div>
     <div style="color:rgba(255,255,255,0.9);font-size:11px;margin-top:2px;letter-spacing:2px;text-transform:uppercase;">Member Portal Access</div>
   </div>
 
@@ -86,7 +86,7 @@ class EmailService {
   <div style="padding:40px;">
     <h2 style="color:#fff;margin:0 0 8px;font-size:22px;">Welcome, ${firstName}! 💪</h2>
     <p style="color:#888;font-size:15px;line-height:1.6;margin:0 0 32px;">
-      Your gym has added you to GymFlow Pro. Use the credentials below to access your personal member portal — track workouts, view your program, and chat with the AI coach.
+      Your gym has added you to GymCore Pro. Use the credentials below to access your personal member portal — track workouts, view your program, and chat with the AI coach.
     </p>
 
     <!-- Credentials box -->
@@ -124,7 +124,7 @@ class EmailService {
 
   <!-- Footer -->
   <div style="padding:20px 40px;border-top:1px solid #1a1a24;text-align:center;">
-    <p style="color:#333;font-size:12px;margin:0;">GymFlow Pro · Your gym's digital command center</p>
+    <p style="color:#333;font-size:12px;margin:0;">GymCore Pro · Your gym's digital command center</p>
   </div>
 </div>
 </body>
@@ -132,8 +132,8 @@ class EmailService {
 
     return this.sendEmail(
       email,
-      `🏋️ You've been added to GymFlow — your login details`,
-      `Welcome to GymFlow Pro! Email: ${email} | Password: ${tempPassword} | PIN: ${accessPin}`,
+      `🏋️ You've been added to GymCore — your login details`,
+      `Welcome to GymCore Pro! Email: ${email} | Password: ${tempPassword} | PIN: ${accessPin}`,
       html
     );
   }
@@ -149,7 +149,7 @@ class EmailService {
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'Segoe UI',sans-serif;">
 <div style="max-width:560px;margin:40px auto;background:#111118;border-radius:20px;overflow:hidden;border:1px solid #222;">
   <div style="background:#F59E0B;padding:24px 40px;">
-    <div style="font-size:20px;font-weight:900;color:#000;letter-spacing:-0.5px;">GymFlow Pro</div>
+    <div style="font-size:20px;font-weight:900;color:#000;letter-spacing:-0.5px;">GymCore Pro</div>
   </div>
   <div style="padding:40px;">
     <h2 style="color:#fff;margin:0 0 8px;font-size:22px;">Password Reset Request</h2>

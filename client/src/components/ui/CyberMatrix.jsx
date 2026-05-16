@@ -1,7 +1,7 @@
 
 
 /**
- * CyberMatrix - A reusable high-fidelity background for the GymFlow Pro ecosystem.
+ * CyberMatrix - A reusable high-fidelity background for the GymCore Pro ecosystem.
  * Features:
  * - Matrix-style grid grid
  * - Dynamic glows

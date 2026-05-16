@@ -446,7 +446,7 @@ export default function AccessPass() {
                   </motion.div>
                   <div style={{ fontSize: '1.4rem', fontWeight: 900, marginBottom: '6px' }}>Access Granted!</div>
                   <div style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>
-                    Welcome to GymFlow, <strong style={{ color: 'var(--text-1)' }}>{user?.firstName}</strong>.<br/>Today's session has been recorded.
+                    Welcome to GymCore, <strong style={{ color: 'var(--text-1)' }}>{user?.firstName}</strong>.<br/>Today's session has been recorded.
                   </div>
                 </motion.div>
               ) : (
