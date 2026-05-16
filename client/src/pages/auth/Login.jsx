@@ -103,9 +103,6 @@ export default function Login() {
             <a href="/register" style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none' }}>
               🏋️ New gym? Register here →
             </a>
-            <span style={{ color: 'var(--text-4)', fontSize: '0.75rem' }}>
-              Members: use credentials sent by your gym admin
-            </span>
           </div>
         </div>
       </motion.div>
