@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const memberSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true },
@@ -105,7 +106,7 @@ memberSchema.pre('save', async function (next) {
       let pin;
       let exists = true;
       while (exists) {
-        pin = Math.floor(1000 + Math.random() * 9000).toString();
+        pin = crypto.randomInt(1000, 10000).toString();
         const found = await mongoose.model('Member').findOne({ accessPin: pin });
         if (!found) exists = false;
       }

@@ -6,6 +6,7 @@ const BadgeService = require('../services/badge.service');
 const logger = require('../utils/logger');
 const NodeCache = require('node-cache');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 
 // Replay protection cache (10 min expiry)
 const jtiCache = new NodeCache({ stdTTL: 600 });
@@ -215,7 +216,7 @@ const getKioskPin = async (req, res, next) => {
     const gymIdStr = req.user.gymId.toString();
     let currentPin = kioskPinCache.get(gymIdStr);
     if (!currentPin) {
-      currentPin = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit PIN
+      currentPin = crypto.randomInt(100000, 1000000).toString(); // 6 digit PIN
       kioskPinCache.set(gymIdStr, currentPin, 30);
     }
     return successResponse(res, { pin: currentPin });
