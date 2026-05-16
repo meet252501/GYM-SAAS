@@ -7,18 +7,7 @@ const { successResponse, errorResponse } = require('../utils/apiResponse'); // �
 // @route   GET /api/v1/memberships/plans
 // @access  Private
 exports.getPlans = catchAsync(async (req, res) => {
-  let plans = await MembershipPlan.find({ gymId: req.user.gymId, isActive: true });
-
-  // ─── Auto-Seed: create 3 default plans if none exist ──────────
-  if (plans.length === 0) {
-    const defaults = [
-      { gymId: req.user.gymId, name: 'Monthly',   price: 999,  duration: { value: 1,  unit: 'month' }, isActive: true, features: ['Gym Access', 'Locker Room'] },
-      { gymId: req.user.gymId, name: 'Quarterly', price: 2499, duration: { value: 3,  unit: 'month' }, isActive: true, features: ['Gym Access', 'Locker Room', 'Trainer Check-in'] },
-      { gymId: req.user.gymId, name: 'Annual',    price: 7999, duration: { value: 12, unit: 'month' }, isActive: true, features: ['Gym Access', 'Personal Trainer', 'Nutrition Plan'] },
-    ];
-    plans = await MembershipPlan.insertMany(defaults);
-  }
-
+  const plans = await MembershipPlan.find({ gymId: req.user.gymId, isActive: true });
   return successResponse(res, plans);
 });
 
@@ -66,4 +55,12 @@ exports.assignMembership = catchAsync(async (req, res) => {
   });
 
   return successResponse(res, membership);
+});
+// @desc    Delete a membership plan
+// @route   DELETE /api/v1/memberships/plans/:id
+// @access  Private (Owner/Trainer)
+exports.deletePlan = catchAsync(async (req, res) => {
+  const plan = await MembershipPlan.findOneAndDelete({ _id: req.params.id, gymId: req.user.gymId });
+  if (!plan) return errorResponse(res, 'Plan not found', 404);
+  return res.status(200).json({ success: true, message: 'Plan deleted' });
 });

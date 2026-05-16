@@ -5,7 +5,7 @@ import {
   Download, Search, Plus, 
   Receipt
 } from 'lucide-react';
-import { paymentApi } from '../../api';
+import { paymentApi, membershipApi } from '../../api';
 import MemberSelector from '../../components/ui/MemberSelector';
 import Modal from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
@@ -15,6 +15,11 @@ export default function Payments() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  
+  const [plans, setPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  const [newPlanForm, setNewPlanForm] = useState({ name: '', price: '', duration: 1 });
   
   const [transactions, setTransactions] = useState([]);
   const [stats, setStats] = useState({ revenue: 0, successful: 0, failed: 0 });
@@ -85,6 +90,51 @@ export default function Payments() {
     }
   };
 
+  const loadPlans = async () => {
+    setLoadingPlans(true);
+    try {
+      const res = await membershipApi.getPlans();
+      setPlans(res.data.data || []);
+    } catch {
+      toast.error('Failed to load plans');
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  const handleOpenPlanModal = () => {
+    setIsPlanModalOpen(true);
+    loadPlans();
+  };
+
+  const handleCreatePlan = async (e) => {
+    e.preventDefault();
+    try {
+      await membershipApi.createPlan({
+        name: newPlanForm.name,
+        price: parseFloat(newPlanForm.price),
+        duration: { value: parseInt(newPlanForm.duration), unit: 'month' },
+        features: ['Gym Access']
+      });
+      toast.success('Plan created successfully');
+      setNewPlanForm({ name: '', price: '', duration: 1 });
+      loadPlans();
+    } catch {
+      toast.error('Failed to create plan');
+    }
+  };
+
+  const handleDeletePlan = async (id) => {
+    if (!window.confirm("Delete this plan?")) return;
+    try {
+      await membershipApi.deletePlan(id);
+      toast.success('Plan deleted');
+      loadPlans();
+    } catch {
+      toast.error('Failed to delete plan');
+    }
+  };
+
   const handleDownloadInvoice = async (paymentId) => {
     try {
       const response = await paymentApi.getInvoice(paymentId);
@@ -122,6 +172,9 @@ export default function Payments() {
             <p className="text-faint">Track revenue, invoices, and payment history</p>
           </div>
           <div style={{ display: 'flex', gap: 12 }}>
+            <button className="btn btn-ghost" onClick={handleOpenPlanModal}>
+              <Receipt size={18} /> Manage Plans
+            </button>
             <button className="btn btn-ghost" onClick={() => toast.success("Exporting...")}>
               <Download size={18} /> Export
             </button>
@@ -299,6 +352,50 @@ export default function Payments() {
             </div>
           </form>
         </Modal>
+
+        {/* Manage Plans Modal */}
+        <Modal isOpen={isPlanModalOpen} onClose={() => setIsPlanModalOpen(false)} title="Manage Membership Plans">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {/* Create Plan Form */}
+            <form onSubmit={handleCreatePlan} style={{ background: 'var(--surface-2)', padding: 16, borderRadius: 12, border: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: '1rem', marginBottom: 16 }}>Create New Plan</h3>
+              <div className="grid-3" style={{ gap: 12, alignItems: 'end' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Plan Name</label>
+                  <input type="text" className="form-input" required placeholder="e.g. VIP Elite" value={newPlanForm.name} onChange={e => setNewPlanForm({...newPlanForm, name: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Price (₹)</label>
+                  <input type="number" className="form-input" required placeholder="0" value={newPlanForm.price} onChange={e => setNewPlanForm({...newPlanForm, price: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Duration (Months)</label>
+                  <input type="number" className="form-input" required min="1" placeholder="1" value={newPlanForm.duration} onChange={e => setNewPlanForm({...newPlanForm, duration: e.target.value})} />
+                </div>
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: 12 }}>Create Plan</button>
+            </form>
+
+            {/* List Existing Plans */}
+            <div>
+              <h3 style={{ fontSize: '1rem', marginBottom: 12 }}>Existing Plans</h3>
+              {loadingPlans ? <p className="text-faint">Loading...</p> : plans.length === 0 ? <p className="text-faint">No custom plans created yet.</p> : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {plans.map(p => (
+                    <div key={p._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div>
+                        <strong style={{ display: 'block', fontSize: '0.95rem' }}>{p.name}</strong>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-3)' }}>₹{p.price} • {p.duration.value} {p.duration.unit}</span>
+                      </div>
+                      <button onClick={() => handleDeletePlan(p._id)} className="btn btn-ghost" style={{ color: 'var(--danger)', padding: '6px 12px', fontSize: '0.8rem' }}>Delete</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </Modal>
+
       </motion.div>
     </div>
   );

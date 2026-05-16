@@ -51,6 +51,7 @@ export const paymentApi = {
 export const membershipApi = {
   getPlans: () => client.get('/memberships/plans'),
   createPlan: (data) => client.post('/memberships/plans', data),
+  deletePlan: (id) => client.delete('/memberships/plans/' + id),
   assign: (data) => client.post('/memberships/assign', data),
 };
 
