@@ -36,7 +36,7 @@ class EmailService {
 
   // ── Gym owner signup welcome ──────────────────────────────────
   async sendWelcomeEmail({ firstName, email }) {
-    const clientUrl = process.env.CLIENT_URL || 'https://gymcore.vercel.app';
+    const clientUrl = process.env.CLIENT_URL || 'https://gymflow-lilac-seven.vercel.app';
     return this.sendEmail(
       email,
       `Welcome to GymCore Pro, ${firstName}!`,
