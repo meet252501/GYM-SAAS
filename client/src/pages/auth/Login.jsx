@@ -99,9 +99,14 @@ export default function Login() {
         </form>
 
         <div className="auth-footer">
-          <span style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>
-            New to GymFlow? Your gym admin will send you login credentials.
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+            <a href="/register" style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.875rem', textDecoration: 'none' }}>
+              🏋️ New gym? Register here →
+            </a>
+            <span style={{ color: 'var(--text-4)', fontSize: '0.75rem' }}>
+              Members: use credentials sent by your gym admin
+            </span>
+          </div>
         </div>
       </motion.div>
 

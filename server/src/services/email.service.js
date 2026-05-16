@@ -40,13 +40,30 @@ class EmailService {
       email,
       `Welcome to GymFlow Pro, ${firstName}!`,
       `Your gym is now live on GymFlow Pro.`,
-      `<div style="font-family:sans-serif;max-width:560px;margin:auto;padding:32px;background:#111;border-radius:16px;color:#fff">
-        <h2 style="color:#F59E0B;margin:0 0 16px">GymFlow Pro 🏋️</h2>
-        <p>Hi ${firstName}, your gym is now live!</p>
-        <p>Visit your admin dashboard to add members, manage plans, and track attendance.</p>
-        <a href="${process.env.CLIENT_URL}/login" style="display:inline-block;margin-top:16px;padding:12px 24px;background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;border-radius:10px;text-decoration:none;font-weight:800">Open Dashboard →</a>
-        <p style="margin-top:24px;color:#555;font-size:12px">GymFlow Pro · Your gym's command center</p>
-      </div>`
+      `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#0a0a0f;font-family:'Segoe UI',sans-serif;">
+<div style="max-width:560px;margin:40px auto;background:#111118;border-radius:20px;overflow:hidden;border:1px solid #222;">
+  <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1000&auto=format&fit=crop" alt="Gym" style="width:100%;height:140px;object-fit:cover;border-bottom:3px solid #F59E0B;display:block;" />
+  <div style="padding:40px;">
+    <h2 style="color:#fff;margin:0 0 8px;font-size:24px;">Welcome, ${firstName}! 🚀</h2>
+    <p style="color:#888;font-size:15px;line-height:1.6;margin:0 0 32px;">
+      Your gym is now officially live on <strong>GymFlow Pro</strong>. You have unlocked the ultimate command center to manage members, process memberships, and deploy AI-driven training.
+    </p>
+    <div style="background:#1a1a24;border:1px solid #2a2a3a;border-radius:14px;padding:24px;margin-bottom:24px;text-align:center;">
+      <div style="color:#F59E0B;font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">SYSTEM STATUS</div>
+      <div style="color:#22C55E;font-size:20px;font-weight:900;letter-spacing:1px;">ALL SYSTEMS OPERATIONAL</div>
+    </div>
+    <a href="${process.env.CLIENT_URL}/login" style="display:block;background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;text-decoration:none;text-align:center;padding:16px;border-radius:12px;font-weight:800;font-size:15px;letter-spacing:0.5px;">
+      Initialize Dashboard →
+    </a>
+  </div>
+  <div style="padding:20px 40px;border-top:1px solid #1a1a24;text-align:center;">
+    <p style="color:#333;font-size:12px;margin:0;">GymFlow Pro · The Future of Fitness</p>
+  </div>
+</div>
+</body>
+</html>`
     );
   }
 
@@ -57,10 +74,11 @@ class EmailService {
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'Segoe UI',sans-serif;">
 <div style="max-width:560px;margin:40px auto;background:#111118;border-radius:20px;overflow:hidden;border:1px solid #222;">
 
-  <!-- Header -->
-  <div style="background:linear-gradient(135deg,#F59E0B,#EF4444);padding:32px 40px;">
-    <div style="font-size:28px;font-weight:900;color:#fff;letter-spacing:-1px;">GymFlow Pro</div>
-    <div style="color:rgba(255,255,255,0.8);font-size:13px;margin-top:4px;letter-spacing:2px;text-transform:uppercase;">Member Portal Access</div>
+  <!-- Header Image -->
+  <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop" alt="GymFlow Training" style="width:100%;height:160px;object-fit:cover;display:block;" />
+  <div style="background:linear-gradient(135deg,#F59E0B,#EF4444);padding:16px 40px;">
+    <div style="font-size:24px;font-weight:900;color:#fff;letter-spacing:-0.5px;">GymFlow Pro</div>
+    <div style="color:rgba(255,255,255,0.9);font-size:11px;margin-top:2px;letter-spacing:2px;text-transform:uppercase;">Member Portal Access</div>
   </div>
 
   <!-- Body -->
@@ -125,16 +143,28 @@ class EmailService {
       user.email,
       `Password Reset Code: [${otp}]`,
       `Your password reset code is: ${otp}`,
-      `<div style="font-family:sans-serif;max-width:560px;margin:auto;padding:32px;background:#111;border-radius:16px;color:#fff">
-        <h2 style="color:#F59E0B;">Password Reset</h2>
-        <p>A reset was requested for your GymFlow account.</p>
-        <div style="background:#1a1a24;padding:24px;border-radius:12px;text-align:center;margin:20px 0;">
-          <span style="font-size:2.5rem;font-weight:900;letter-spacing:8px;color:#fff;">${otp}</span>
-          <p style="color:#666;font-size:12px;margin-top:8px;">Expires in 10 minutes</p>
-        </div>
-        <p style="color:#555;font-size:13px;">If you didn't request this, ignore this email.</p>
-        <p style="color:#444;font-size:12px;margin-top:16px;">— GymFlow Pro</p>
-      </div>`
+      `<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#0a0a0f;font-family:'Segoe UI',sans-serif;">
+<div style="max-width:560px;margin:40px auto;background:#111118;border-radius:20px;overflow:hidden;border:1px solid #222;">
+  <div style="background:#F59E0B;padding:24px 40px;">
+    <div style="font-size:20px;font-weight:900;color:#000;letter-spacing:-0.5px;">GymFlow Pro</div>
+  </div>
+  <div style="padding:40px;">
+    <h2 style="color:#fff;margin:0 0 8px;font-size:22px;">Password Reset Request</h2>
+    <p style="color:#888;font-size:15px;line-height:1.6;margin:0 0 32px;">
+      A password reset command was initiated for your account. Please use the secure OTP below to proceed.
+    </p>
+    <div style="background:#1a1a24;border:1px solid #2a2a3a;border-radius:14px;padding:32px;margin-bottom:24px;text-align:center;">
+      <div style="color:#666;font-size:11px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">AUTHORIZATION CODE</div>
+      <div style="color:#fff;font-size:36px;font-weight:900;letter-spacing:12px;">${otp}</div>
+      <div style="color:#EF4444;font-size:12px;margin-top:12px;font-weight:600;">⚠️ Expires in 10 minutes</div>
+    </div>
+    <p style="color:#444;font-size:13px;text-align:center;">If you did not request this, please ignore this email.</p>
+  </div>
+</div>
+</body>
+</html>`
     );
   }
 }
