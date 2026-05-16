@@ -5,8 +5,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, X, Send, Minimize2, Maximize2, Sparkles, RotateCcw } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { sendAIMessage, buildAdminPrompt } from '../../hooks/useGymAI';
-import { mockDashboard } from '../../data/mockData';
+
 
 const QUICK_PROMPTS = [
   'Which members are at risk of churning?',
@@ -43,9 +45,12 @@ function Message({ msg }) {
         color: isUser ? '#000' : 'var(--text-1)',
         fontSize: '0.83rem', lineHeight: 1.55, fontWeight: isUser ? 600 : 400,
         border: isUser ? 'none' : '1px solid var(--border)',
-        whiteSpace: 'pre-wrap',
       }}>
-        {msg.content}
+        {isUser ? msg.content : (
+          <div className="markdown-content">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </motion.div>
   );
@@ -56,7 +61,7 @@ export default function AdminAI() {
   const [expanded, setExpanded] = useState(false);
   const [messages, setMessages] = useState([{
     role: 'assistant',
-    content: "👋 Hi! I'm GymFlow Intelligence — your admin AI. Ask me about members, revenue, retention, or class planning. I have access to your gym's live stats.",
+    content: "PROTOCOL_ACTIVE: GYMFLOW_EXECUTIVE_INTELLIGENCE_v4.0. Strategic advisory nodes fully operational. Standing by for operational inquiries regarding fiscal velocity, attrition risks, or utilization metrics.",
   }]);
   const [input, setInput]   = useState('');
   const [loading, setLoading] = useState(false);
@@ -66,11 +71,17 @@ export default function AdminAI() {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
   useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 300); }, [open]);
 
-  const systemMsg = { role: 'system', content: buildAdminPrompt({
-    totalMembers: 12, activeMembers: 9, expiringSoon: 2,
-    revenueThisMonth: mockDashboard.revenue.thisMonth,
-    todayCheckins: 14, avgAttendance: 18,
-  })};
+  const systemMsg = {
+    role: 'system',
+    content: buildAdminPrompt({
+      totalMembers: 0,
+      activeMembers: 0,
+      expiringSoon: 0,
+      revenueThisMonth: 0,
+      todayCheckins: 0,
+      avgAttendance: 0,
+    })
+  };
 
   async function send(text) {
     const userText = (text || input).trim();

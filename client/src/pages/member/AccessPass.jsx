@@ -4,7 +4,7 @@ import {
   Crown, Star, Zap, Clock,
   Copy, Check, Dumbbell,
   ShieldCheck, Loader2,
-  Fingerprint, CheckCircle, X, CalendarCheck
+  Fingerprint, CheckCircle, X, CalendarCheck, Camera
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { attendanceApi } from '../../api';
@@ -12,6 +12,7 @@ import { toast } from 'react-hot-toast';
 import CyberMatrix from '../../components/ui/CyberMatrix';
 import BackButton from '../../components/ui/BackButton';
 import BentoCard from '../../components/ui/BentoCard';
+import { QRCodeSVG } from 'qrcode.react';
 
 const PLAN_CONFIG = {
   Elite:   { color: '#F59E0B', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)',  Icon: Crown, gradient: 'linear-gradient(135deg,#F59E0B,#D97706)' },
@@ -32,6 +33,7 @@ export default function AccessPass() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checkinModal, setCheckinModal] = useState(false);
+  const [scanModal, setScanModal] = useState(false);
   const [checkinStatus, setCheckinStatus] = useState('idle');
 
   // PIN Input State
@@ -165,6 +167,19 @@ export default function AccessPass() {
               >
                 <CheckCircle size={20} /> Mark Attendance
               </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setScanModal(true)}
+                style={{
+                  width: '100%', padding: '16px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-2)',
+                  fontWeight: 800, fontSize: '0.85rem', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  textTransform: 'uppercase', letterSpacing: '1px'
+                }}
+              >
+                <Camera size={18} /> Scan Terminal QR
+              </motion.button>
             </div>
           </BentoCard>
         </motion.div>
@@ -199,6 +214,26 @@ export default function AccessPass() {
               textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px'
             }}>
               <cfg.Icon size={12} /> {plan}
+            </div>
+          </div>
+
+          {/* QR Code Identification */}
+          <div style={{ 
+            display: 'flex', justifyContent: 'center', paddingTop: '32px', paddingBottom: '8px'
+          }}>
+            <div style={{
+              background: 'white', padding: '16px', borderRadius: '24px', 
+              boxShadow: `0 0 30px ${cfg.color}30`,
+              border: `2px solid ${cfg.color}40`
+            }}>
+              <QRCodeSVG 
+                value={memberId}
+                size={140}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                level="H"
+                includeMargin={false}
+              />
             </div>
           </div>
 
@@ -322,8 +357,6 @@ export default function AccessPass() {
               ))
             )}
           </div>
-        </div>
-
       </div>
 
       {/* ── Attendance Check-in Modal ── */}
@@ -459,7 +492,45 @@ export default function AccessPass() {
             </motion.div>
           </motion.div>
         )}
+
+        {/* ── QR Scan Modal ── */}
+        {scanModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 300,
+              background: '#000',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <div style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10 }}>
+              <button onClick={() => setScanModal(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', width: '40px', height: '40px', color: 'white', cursor: 'pointer' }}><X /></button>
+            </div>
+            
+            <div style={{ textAlign: 'center', color: 'white' }}>
+              <div style={{ width: '280px', height: '280px', border: '2px solid var(--primary)', borderRadius: '32px', position: 'relative', overflow: 'hidden', margin: '0 auto 32px' }}>
+                <motion.div 
+                  animate={{ top: ['0%', '100%', '0%'] }} 
+                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+                  style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'var(--primary)', boxShadow: '0 0 15px var(--primary)', zIndex: 2 }} 
+                />
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }}>
+                  <Camera size={48} color="rgba(255,255,255,0.2)" />
+                </div>
+              </div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>INITIALIZING SCAN</h2>
+              <p style={{ color: 'var(--text-4)', fontSize: '0.9rem', maxWidth: '240px', margin: '0 auto' }}>Position the Terminal QR code within the frame to synchronize.</p>
+              
+              <div style={{ marginTop: '40px', color: 'var(--primary)', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px' }}>
+                PROTOCOL_LINKING_ACTIVE...
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
-  );
+  </div>
+);
 }

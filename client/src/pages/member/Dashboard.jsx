@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { 
   Flame,
   Play, Users, Target, Award, Zap, TrendingUp, 
-  Dumbbell, Bot,
+  Dumbbell, Bot, Database,
   Clock, MapPin, Activity
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -44,7 +44,7 @@ function capacityColor(pct) {
 
 export default function MemberDashboard() {
   const { user } = useAuthStore();
-  const [capacity, setCapacity] = useState(74);
+  const [capacity] = useState(65);
   const [badges, setBadges] = useState([]);
   const [nutrition, setNutrition] = useState(null);
   const [activeProgram, setActiveProgram] = useState(null);
@@ -76,13 +76,6 @@ export default function MemberDashboard() {
     };
     fetchData();
   }, [today]);
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setCapacity(c => Math.max(20, Math.min(98, c + (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * 4))));
-    }, 5000);
-    return () => clearInterval(t);
-  }, []);
 
   const cap = capacityColor(capacity);
   const totals = nutrition?.totals || { calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -185,6 +178,7 @@ export default function MemberDashboard() {
                 { label: 'Training Hub', path: '/member/training', icon: Zap, color: 'var(--primary)', desc: 'Plans, Matrix & Flow' },
                 { label: 'Live Studio', path: '/member/studio', icon: Activity, color: '#3b82f6', desc: 'Sync sessions' },
                 { label: 'AI Neural Coach', path: '/member/coach', icon: Bot, color: '#ec4888', desc: 'Strategic guidance' },
+                { label: 'Neural Basement', path: '/member/basement', icon: Database, color: '#10b981', desc: 'Local/Private AI' },
                 { label: 'Fuel HQ', path: '/member/nutrition', icon: Target, color: '#ef4444', desc: 'Nutrition tracking' }
               ].map(item => (
                 <Link key={item.label} to={item.path} style={{ textDecoration: 'none' }}>
@@ -283,7 +277,7 @@ export default function MemberDashboard() {
                 </div>
               </div>
               <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.5, color: 'var(--text-2)' }}>
-                Based on your sleep and recovery, today is perfect for high-intensity training. Focus on progressive overload.
+                NEURAL_ADVISORY: Based on recovery metrics and biometric velocity, today is optimal for high-intensity loading. Enforce progressive overload protocols.
               </p>
             </BentoCard>
 

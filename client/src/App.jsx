@@ -24,6 +24,7 @@ const Settings = lazy(() => import('./pages/admin/Settings'));
 const AppSettings = lazy(() => import('./pages/admin/AppSettings'));
 const DietPlans = lazy(() => import('./pages/admin/DietPlans'));
 const Programs = lazy(() => import('./pages/admin/Programs'));
+const Help = lazy(() => import('./pages/Help'));
 
 // Member pages (Consolidated)
 const MemberDashboard = lazy(() => import('./pages/member/Dashboard'));
@@ -33,6 +34,7 @@ const LiveStudio = lazy(() => import('./pages/member/LiveStudio'));
 const Profile = lazy(() => import('./pages/member/Profile'));
 const CoachAI = lazy(() => import('./pages/member/CoachAI'));
 const FuelHQ = lazy(() => import('./pages/member/FuelHQ'));
+const NeuralBasement = lazy(() => import('./pages/member/NeuralBasement'));
 const AttendanceTerminal = lazy(() => import('./pages/admin/terminal/AttendanceTerminal'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
@@ -59,7 +61,25 @@ const PublicRoute = ({ children }) => {
 
 function App() {
   const initialize = useAuthStore(s => s.initialize);
+  const gym = useAuthStore(s => s.gym);
+
   useEffect(() => { initialize(); }, [initialize]);
+
+  useEffect(() => {
+    if (gym?.accentColor) {
+      document.documentElement.style.setProperty('--primary', gym.accentColor);
+      // Generate lighter/darker shades or opacity for other variables if needed
+      document.documentElement.style.setProperty('--primary-surface', `${gym.accentColor}15`);
+      document.documentElement.style.setProperty('--primary-border', `${gym.accentColor}40`);
+      document.documentElement.style.setProperty('--gradient-brand', `linear-gradient(135deg, ${gym.accentColor} 0%, #EF4444 100%)`);
+    } else {
+      // Reset to default
+      document.documentElement.style.setProperty('--primary', '#F59E0B');
+      document.documentElement.style.setProperty('--primary-surface', 'rgba(245, 158, 11, 0.08)');
+      document.documentElement.style.setProperty('--primary-border', 'rgba(245, 158, 11, 0.25)');
+      document.documentElement.style.setProperty('--gradient-brand', 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)');
+    }
+  }, [gym]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -108,6 +128,11 @@ function App() {
             
             <Route path="/member/nutrition" element={<ProtectedRoute roles={['member']}><MemberLayout><FuelHQ /></MemberLayout></ProtectedRoute>} />
             <Route path="/member/fuel" element={<Navigate to="/member/nutrition" replace />} />
+
+            <Route path="/member/basement" element={<ProtectedRoute roles={['member']}><MemberLayout><NeuralBasement /></MemberLayout></ProtectedRoute>} />
+            <Route path="/member/local-ai" element={<Navigate to="/member/basement" replace />} />
+
+            <Route path="/support" element={<ProtectedRoute><Help /></ProtectedRoute>} />
 
             <Route path="/admin/terminal" element={<ProtectedRoute roles={['member', 'owner', 'trainer']}><AttendanceTerminal /></ProtectedRoute>} />
 

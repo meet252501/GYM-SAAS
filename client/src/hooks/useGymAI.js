@@ -38,23 +38,32 @@ export function useAIUsage() {
 }
 
 // ─── Windows AI (Local Browser AI) ────────────────────────────
+// ─── Windows AI (Local Browser AI) ────────────────────────────
 async function callWindowsAI(messages) {
+  const timeout = new Promise((_, reject) => 
+    setTimeout(() => reject(new Error("Local AI Timeout")), 5000)
+  );
+
   try {
-    const ai = window.ai || window.model;
-    if (!ai) throw new Error("Local AI not available");
+    const aiCall = (async () => {
+      const ai = window.ai || window.model;
+      if (!ai) throw new Error("Local AI not available");
 
-    const capabilities = await ai.languageModel.capabilities();
-    if (capabilities.available === 'no') throw new Error("Local AI model not downloaded");
+      const capabilities = await ai.languageModel.capabilities();
+      if (capabilities.available === 'no') throw new Error("Local AI model not downloaded");
 
-    const systemMsg = messages.find(m => m.role === 'system')?.content || '';
-    const userMessages = messages.filter(m => m.role !== 'system');
-    
-    const prompt = userMessages.map(m => `${m.role === 'assistant' ? 'Coach' : 'User'}: ${m.content}`).join('\n') + '\nCoach:';
+      const systemMsg = messages.find(m => m.role === 'system')?.content || '';
+      const userMessages = messages.filter(m => m.role !== 'system');
+      
+      const prompt = userMessages.map(m => `${m.role === 'assistant' ? 'Coach' : 'User'}: ${m.content || ''}`).join('\n') + '\nCoach:';
 
-    const session = await ai.languageModel.create({ systemPrompt: systemMsg, temperature: 0.7, topK: 3 });
-    const result = await session.prompt(prompt);
-    session.destroy();
-    return result;
+      const session = await ai.languageModel.create({ systemPrompt: systemMsg, temperature: 0.7, topK: 3 });
+      const result = await session.prompt(prompt);
+      session.destroy();
+      return result;
+    })();
+
+    return await Promise.race([aiCall, timeout]);
   } catch (e) {
     console.warn("Windows AI Error:", e.message);
     throw e;
@@ -188,7 +197,7 @@ Muscle tissue does not grow in the gym; it grows during deep recovery.
 ];
 
 export function ruleBasedReply(userMessage) {
-  const msg = userMessage.toLowerCase();
+  const msg = (userMessage || '').toLowerCase();
   for (const protocol of PROTOCOL_LIBRARY) {
     if (protocol.keys.some(k => msg.includes(k))) return protocol.reply;
   }
@@ -216,6 +225,7 @@ export async function analyzeFoodImage(base64Data, mimeType) {
 }
 
 // ─── Main AI call ─────────────────────────────────────────────
+// ─── Main AI call ─────────────────────────────────────────────
 export async function sendAIMessage(messages) {
   // 1. ALWAYS TRY BROWSER AI FIRST (FREE - Saves your API limits!)
   try {
@@ -227,7 +237,10 @@ export async function sendAIMessage(messages) {
 
   // 2. BACKEND PROXY (Paid Fallback - used only if local AI fails)
   try {
-    const { data } = await aiApi.chat(messages);
+    const backendTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Backend AI Timeout")), 7000)
+    );
+    const { data } = await Promise.race([aiApi.chat(messages), backendTimeout]);
     return data.data.reply;
   } catch (e) {
     console.warn('Backend AI failed, using rule engine...', e.message);
@@ -242,39 +255,50 @@ export async function sendAIMessage(messages) {
 
 // ─── Prompt Builders ──────────────────────────────────────────
 export function buildAdminPrompt(stats) {
-  return `You are GymFlow Intelligence, a high-level administrative AI assistant for gym owners.
-Context:
-- Total Members: ${stats.totalMembers}
-- Active: ${stats.activeMembers}
-- Expiring Soon: ${stats.expiringSoon}
-- Revenue This Month: $${stats.revenueThisMonth}
-- Today's Checkins: ${stats.todayCheckins}
-- Avg Daily Attendance: ${stats.avgAttendance}
+  return `PROTOCOL: GYMFLOW_EXECUTIVE_ADVISORY_v4.0
+AUTHORITY: SENIOR OPERATIONAL INTELLIGENCE
+STRICT DIRECTIVE: ELIMINATE ALL CONVERSATIONAL FILLER. NO GREETINGS. NO ASSISTANCE OFFERS.
 
-Your goal is to help the gym owner make data-driven decisions to increase retention and revenue. 
-Be professional, concise, and insightful. Focus on growth and optimization.`;
+### DATA_STREAM_INPUT:
+- TOTAL_NODES: ${stats.totalMembers}
+- ACTIVE_SYNC: ${stats.activeMembers}
+- ATTRITION_RISK: ${stats.expiringSoon}
+- FISCAL_VELOCITY: $${stats.revenueThisMonth}
+- CURRENT_UTILIZATION: ${stats.todayCheckins}
+- OPERATIONAL_MEAN: ${stats.avgAttendance}/unit
+
+### REQUIRED_RESPONSE_ARCHITECTURE:
+1. **EXECUTIVE_SUMMARY**: [10-word maximum. High-density clinical assessment]
+2. **KPI_STATISTICAL_MATRIX**: [Markdown table. Metric | Current | Optimized | Variance]
+3. **STRATEGIC_DIRECTIVES**: [3 prioritized technical commands for immediate execution]
+4. **FISCAL_PROJECTION**: [Quantitative EBITDA impact statement]
+
+### CONSTRAINTS:
+- Tone: Clinical, algorithmic, senior-executive.
+- Format: Strictly Markdown.
+- Prohibited: "I can help", "Welcome", "How are you", "Please let me know".`;
 }
 
 export function buildMemberPrompt(user) {
-  return `You are GymCoach PRO, an elite fitness AI strategist. Your responses must be systematic, highly structured, and data-driven, similar to the reasoning style of Claude 3.5 Sonnet.
+  return `PROTOCOL: NEURAL_SYNC_TACTICAL_COACH_v2.1
+AUTHORITY: ELITE PERFORMANCE STRATEGIST
+STRICT DIRECTIVE: ZERO CONVERSATIONAL NOISE. CLINICAL PRECISION ONLY.
 
-User Identity: ${user?.firstName || 'Warrior'}
-Target Objective: ${user?.fitnessGoal || 'Peak Performance'}
-Current Tier: ${user?.membershipPlan || 'ELITE'}
+### SUBJECT_BIOMETRICS:
+- IDENTITY: ${user?.firstName || 'UNKNOWN_MEMBER'}
+- OBJECTIVE_VECTOR: ${user?.fitnessGoal || 'PEAK_PERFORMANCE'}
+- ACCESS_TIER: ${user?.membershipPlan || 'ELITE'}
 
-### MANDATORY RESPONSE ARCHITECTURE:
-1. **Executive Summary**: A concise 2-sentence overview of the tactical strategy.
-2. **Technical Protocol**: Use a Markdown table for workout sessions (Exercise | Sets | Reps | Intensity) or diet plans.
-3. **Neural Insights**: 3-4 bullet points explaining the physiological mechanisms (e.g., myofibrillar hypertrophy, metabolic efficiency).
-4. **Immediate Directive**: A single, bold action to execute within 15 minutes.
+### REQUIRED_RESPONSE_ARCHITECTURE:
+1. **STATUS_ASSESSMENT**: [1-sentence physiological status]
+2. **TECHNICAL_PROTOCOL**: [Markdown Table: Exercise | Sets | Reps | Load_Intensity | Neural_Focus]
+3. **PHYSIOLOGICAL_INSIGHT**: [1 technical bullet point on biomechanics]
+4. **DIRECTIVE_COMMAND**: [One bold, authoritative command]
 
-### STYLISTIC CONSTRAINTS:
-- Use **Bold** for all quantities, durations, and key muscle groups.
-- Use \`code snippets\` for technical terms or acronyms.
-- Use emoji headers for sections (e.g., 🧬 PROTOCOL, ⚡ INSIGHTS, 🎯 DIRECTIVE).
-- TONE: Precise, authoritative, and scientifically rigorous. 
-
-NEVER provide unstructured prose. Every response must feel like a high-fidelity digital briefing.`;
+### CONSTRAINTS:
+- TONE: Authoritative, scientifically rigorous.
+- FORMAT: Structured digital briefing only.
+- Prohibited: "Great job", "Keep it up", "How can I help", "I'm your coach".`;
 }
 
 export const PLAN_LIMITS = { Trial: 3, Basic: 10, Premium: 30, Elite: Infinity, Admin: Infinity };

@@ -10,6 +10,16 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
   await connectDB();
   
+  if (process.env.USE_MEMORY_DB === 'true') {
+    try {
+      const runSeed = require('./src/seeds/seed');
+      await runSeed();
+      console.log('✅ Memory DB seeded successfully');
+    } catch (seedErr) {
+      console.error('❌ Memory DB seeding failed:', seedErr);
+    }
+  }
+  
   const server = http.createServer(app);
   const io = new Server(server, {
     cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173' }

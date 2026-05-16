@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
 import { Smartphone, Download, Settings, Users, ArrowRight } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import useAuthStore from '../../store/authStore';
 
 export default function AppSettings() {
+  const { user } = useAuthStore();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
@@ -43,7 +45,7 @@ export default function AppSettings() {
             border: '2px solid rgba(245,158,11,0.4)',
           }}>
             <QRCodeSVG 
-              value="https://gymflow.app/register?gymId=GYM_12345&source=desk_qr" 
+              value={`https://gymflow.app/register?gymId=${user?.gymId || ''}&source=desk_qr`} 
               size={180} 
               bgColor="#ffffff" 
               fgColor="#09090B" 

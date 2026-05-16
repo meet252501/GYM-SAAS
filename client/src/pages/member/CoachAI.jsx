@@ -102,7 +102,7 @@ export default function MemberAIPage() {
 
   const [messages, setMessages] = useState([{
     role: 'assistant',
-    content: `Tactical Assessment Ready, ${user?.firstName || 'Recruit'}. State your objective.`,
+    content: `NEURAL_SYNC_COMPLETE. GymCoach PRO Protocol Active. Target Subject: ${user?.firstName || 'RECRUIT'}. Standing by for biometric optimization queries or technical training directive requests.`,
   }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

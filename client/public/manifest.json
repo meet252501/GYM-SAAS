@@ -1,37 +1,27 @@
-const { 
-  name, 
-  version, 
-  description, 
-  main, 
-  scripts, 
-  dependencies, 
-  devDependencies 
-} = require('./package.json');
-
-module.exports = {
-  name: "GymFlow Pro",
-  short_name: "GymFlow",
-  description: "AI-Powered Gym Management & Fitness Tracker",
-  start_url: "/",
-  display: "standalone",
-  background_color: "#0a0a0b",
-  theme_color: "#a78bfa",
-  icons: [
+{
+  "name": "GymFlow Pro",
+  "short_name": "GymFlow",
+  "description": "AI-Powered Gym Management & Fitness Tracker",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0b",
+  "theme_color": "#a78bfa",
+  "icons": [
     {
-      src: "pwa-192x192.png",
-      sizes: "192x192",
-      type: "image/png"
+      "src": "pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      src: "pwa-512x512.png",
-      sizes: "512x512",
-      type: "image/png"
+      "src": "pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     },
     {
-      src: "pwa-512x512.png",
-      sizes: "512x512",
-      type: "image/png",
-      purpose: "any maskable"
+      "src": "pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
-};
+}

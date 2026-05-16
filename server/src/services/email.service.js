@@ -50,6 +50,23 @@ class EmailService {
     `;
     return this.sendEmail(user.email, subject, `Welcome to GymFlow Pro, ${user.firstName}!`, html);
   }
+
+  async sendPasswordResetEmail(user, otp) {
+    const subject = `Password Reset Command: [${otp}]`;
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #f59e0b;">Password Reset Requested</h2>
+        <p>A password reset command was initiated for your GymFlow account.</p>
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <span style="font-size: 2rem; font-weight: 900; letter-spacing: 5px; color: #111;">${otp}</span>
+          <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">This code expires in 10 minutes.</p>
+        </div>
+        <p>If you did not request this, please ignore this email or contact support.</p>
+        <p>-- GymFlow Command</p>
+      </div>
+    `;
+    return this.sendEmail(user.email, subject, `Your password reset code is: ${otp}`, html);
+  }
 }
 
 module.exports = new EmailService();

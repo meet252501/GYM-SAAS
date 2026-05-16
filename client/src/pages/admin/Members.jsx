@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  Search, Plus, Filter, MoreHorizontal, Users, Calendar, 
-  Edit, Trash2, Download, RefreshCw, UserCheck, Dumbbell, Zap, Sparkles
+  Search, Plus, Filter, Users, 
+  Edit, Trash2, Download, Dumbbell, Zap, Info
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { membersApi, membershipApi } from '../../api';
+import { motion } from 'framer-motion';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { memberSchema } from '../../utils/validation';
+import { membersApi, membershipApi, workoutsApi } from '../../api';
 import { StatusBadge, PlanBadge, DaysLeftBar } from '../../components/ui/Badges';
 import Avatar from '../../components/ui/Avatar';
 import Modal from '../../components/ui/Modal';
@@ -13,60 +16,28 @@ import CyberMatrix from '../../components/ui/CyberMatrix';
 
 // ─── Add Member Modal ───────────────────────────────────────
 function AddMemberModal({ isOpen, onClose, onSuccess }) {
-  const [form, setForm] = useState({ 
-    firstName: '', lastName: '', email: '', phone: '', 
-    planId: '', gender: 'male' 
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+    resolver: zodResolver(memberSchema),
+    defaultValues: { firstName: '', lastName: '', email: '', phone: '', planId: '', gender: 'male' }
   });
+  
   const [plans, setPlans] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [loadingPlans, setLoadingPlans] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    if (!isOpen) {
-      const timer = setTimeout(() => {
-        if (mounted) {
-          setForm({ 
-            firstName: '', lastName: '', email: '', phone: '', 
-            planId: '', gender: 'male' 
-          });
-        }
-      }, 0);
-      return () => {
-        mounted = false;
-        clearTimeout(timer);
-      };
+    if (isOpen) {
+      membershipApi.getPlans()
+        .then(res => setPlans(res.data.data || []))
+        .catch(() => toast.error("Failed to load plans"));
+    } else {
+      reset();
     }
-    
-    const timer2 = setTimeout(() => {
-      if (mounted) {
-        setLoadingPlans(true);
-        membershipApi.getPlans()
-          .then(res => {
-            if (mounted) setPlans(res.data.data || []);
-          })
-          .catch(() => toast.error("Failed to load plans"))
-          .finally(() => {
-            if (mounted) setLoadingPlans(false);
-          });
-      }
-    }, 0);
-      
-    return () => { 
-      mounted = false; 
-      clearTimeout(timer2);
-    };
-  }, [isOpen]);
+  }, [isOpen, reset]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.firstName || !form.email || !form.planId) {
-      return toast.error("Please fill all required fields");
-    }
-    
+  const onSubmit = async (data) => {
     setSaving(true);
     try {
-      await membersApi.create(form);
+      await membersApi.create(data);
       toast.success('Member enrolled successfully');
       onSuccess();
       onClose();
@@ -79,63 +50,59 @@ function AddMemberModal({ isOpen, onClose, onSuccess }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Member Enrollment">
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '10px 0' }}>
+      <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: '10px 0' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div className="form-group">
             <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>FIRST NAME</label>
             <input 
-              className="form-input" 
+              className={`form-input ${errors.firstName ? 'border-danger' : ''}`} 
               placeholder="e.g. John" 
-              value={form.firstName} 
-              onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} 
-              required 
+              {...register('firstName')}
               style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
             />
+            {errors.firstName && <span style={{ fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 700 }}>{errors.firstName.message}</span>}
           </div>
           <div className="form-group">
             <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>LAST NAME</label>
             <input 
-              className="form-input" 
+              className={`form-input ${errors.lastName ? 'border-danger' : ''}`}
               placeholder="e.g. Doe" 
-              value={form.lastName} 
-              onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))} 
-              required 
+              {...register('lastName')}
               style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
             />
+            {errors.lastName && <span style={{ fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 700 }}>{errors.lastName.message}</span>}
           </div>
         </div>
 
         <div className="form-group">
           <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>EMAIL ADDRESS</label>
           <input 
-            className="form-input" 
+            className={`form-input ${errors.email ? 'border-danger' : ''}`}
             type="email" 
             placeholder="john.doe@example.com" 
-            value={form.email} 
-            onChange={e => setForm(f => ({ ...f, email: e.target.value }))} 
-            required 
+            {...register('email')}
             style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
           />
+          {errors.email && <span style={{ fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 700 }}>{errors.email.message}</span>}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           <div className="form-group">
             <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>PHONE</label>
             <input 
-              className="form-input" 
+              className={`form-input ${errors.phone ? 'border-danger' : ''}`}
               type="tel" 
               placeholder="+91 00000 00000" 
-              value={form.phone} 
-              onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} 
+              {...register('phone')}
               style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
             />
+            {errors.phone && <span style={{ fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 700 }}>{errors.phone.message}</span>}
           </div>
           <div className="form-group">
             <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>GENDER</label>
             <select 
               className="form-select" 
-              value={form.gender} 
-              onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
+              {...register('gender')}
               style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
             >
               <option value="male">Male</option>
@@ -148,155 +115,122 @@ function AddMemberModal({ isOpen, onClose, onSuccess }) {
         <div className="form-group">
           <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>MEMBERSHIP PLAN</label>
           <select 
-            className="form-select" 
-            value={form.planId} 
-            onChange={e => setForm(f => ({ ...f, planId: e.target.value }))}
-            required
-            disabled={loadingPlans}
+            className={`form-select ${errors.planId ? 'border-danger' : ''}`}
+            {...register('planId')}
             style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
           >
-            <option value="">{loadingPlans ? 'Fetching plans...' : 'Select a membership level'}</option>
+            <option value="">Select Plan...</option>
             {plans.map(p => (
-              <option key={p._id} value={p._id}>
-                {p.name} — ₹{p.price} ({p.duration.value} {p.duration.unit})
-              </option>
+              <option key={p._id} value={p._id}>{p.name} - ₹{p.price}</option>
             ))}
           </select>
+          {errors.planId && <span style={{ fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 700 }}>{errors.planId.message}</span>}
         </div>
 
-        <div className="modal-actions" style={{ marginTop: 12, display: 'flex', gap: 12 }}>
-          <button type="button" className="btn btn-ghost" onClick={onClose} style={{ flex: 1, borderRadius: 14 }}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={saving} style={{ flex: 2, borderRadius: 14, boxShadow: '0 8px 20px rgba(var(--primary-rgb), 0.3)' }}>
-            {saving ? <RefreshCw className="animate-spin" size={16} /> : <UserCheck size={16} />}
-            {saving ? 'PROCESSING...' : 'CONFIRM ENROLLMENT'}
-          </button>
-        </div>
+        <button className="btn-primary" style={{ marginTop: 10, padding: 16, borderRadius: 16, fontWeight: 900 }} disabled={saving}>
+          {saving ? 'PROCESSING...' : 'INITIALIZE ENROLLMENT'}
+        </button>
       </form>
     </Modal>
   );
 }
 
-// ─── Member Action Menu ─────────────────────────────────────
-function MemberMenu({ member, onClose, onDelete, onAssign }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95, y: -10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95, y: -10 }}
-      className="glass-panel"
-      style={{
-        position: 'absolute', right: 0, top: '100%', marginTop: 8, zIndex: 100,
-        borderRadius: 16, padding: 8, minWidth: 200, border: '1px solid rgba(255,255,255,0.1)'
-      }}
-    >
-      <button className="dropdown-item" style={{ borderRadius: 10 }} onClick={() => { toast.success("Accessing profile..."); onClose(); }}>
-        <Edit size={14} /> Profile Settings
-      </button>
-      <button className="dropdown-item" style={{ borderRadius: 10 }} onClick={() => { onAssign(member); onClose(); }}>
-        <Dumbbell size={14} /> Assign Protocol
-      </button>
-      <button className="dropdown-item" style={{ borderRadius: 10 }} onClick={() => { toast.success("Loading logs..."); onClose(); }}>
-        <Calendar size={14} /> Attendance History
-      </button>
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '6px 0' }} />
-      <button className="dropdown-item text-danger" style={{ borderRadius: 10 }} onClick={() => { onDelete(member.id); onClose(); }}>
-        <Trash2 size={14} /> Terminate Access
-      </button>
-    </motion.div>
-  );
-}
-
-// ─── Assign Protocol Modal ──────────────────────────────────────
-function AssignProtocolModal({ isOpen, onClose, member, onSuccess }) {
-  const [source, setSource] = useState('custom');
+// ─── Assign Program Modal ──────────────────────────────────
+function AssignProgramModal({ isOpen, onClose, member }) {
+  const [programs, setPrograms] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [selectedProtocol, setSelectedProtocol] = useState({ source: 'coach', programId: '' });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (isOpen) {
+      workoutsApi.getPrograms()
+        .then(res => setPrograms(res.data.data || []));
+    }
+  }, [isOpen]);
+
+  const handleAssign = async () => {
+    if (selectedProtocol.source === 'coach' && !selectedProtocol.programId) {
+      return toast.error("Please select a training program");
+    }
     setSaving(true);
     try {
-      await membersApi.assignProtocol(member.id, { source });
-      toast.success(`Protocol set to ${source.toUpperCase()}`);
-      onSuccess();
+      await membersApi.assignProtocol(member.id, selectedProtocol);
+      toast.success("Protocol synchronized successfully");
       onClose();
     } catch {
-      toast.error('Failed to update protocol');
+      toast.error("Deployment failed");
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Assign Training Protocol">
-      <div style={{ padding: '10px 0' }}>
-        <p style={{ color: 'var(--text-3)', fontSize: '0.9rem', marginBottom: 24 }}>
-          Select the training intelligence source for <span style={{ color: 'var(--primary)', fontWeight: 800 }}>{member?.name}</span>. 
-          This will update their member dashboard instantly.
-        </p>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginBottom: 24 }}>
-          {[
-            { id: 'ai', label: 'AI GENERATED', icon: Sparkles, desc: 'Neural-linked adaptive routines', color: '#a78bfa' },
-            { id: 'coach', label: 'COACH ASSIGNED', icon: Users, desc: 'Human-curated professional plans', color: '#60a5fa' },
-            { id: 'custom', label: 'SELF SELECTED', icon: Dumbbell, desc: 'User-defined workout sequences', color: '#fbbf24' }
-          ].map(opt => (
-            <div 
-              key={opt.id}
-              onClick={() => setSource(opt.id)}
-              style={{
-                padding: '16px 20px',
-                borderRadius: 20,
-                background: source === opt.id ? `${opt.color}15` : 'rgba(255,255,255,0.02)',
-                border: source === opt.id ? `2px solid ${opt.color}` : '2px solid rgba(255,255,255,0.05)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 16,
-                transition: '0.2s'
-              }}
-            >
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: opt.color }}>
-                <opt.icon size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 900, fontSize: '0.8rem', letterSpacing: 1, color: source === opt.id ? opt.color : 'white' }}>{opt.label}</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-4)', fontWeight: 600 }}>{opt.desc}</div>
-              </div>
+    <Modal isOpen={isOpen} onClose={onClose} title={`Protocol Assignment: ${member?.name}`}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '10px 0' }}>
+         <div className="form-group">
+            <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>INTELLIGENCE SOURCE</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+               {[
+                 { id: 'ai', label: 'NEURAL AI', icon: Zap },
+                 { id: 'coach', label: 'COMMANDER', icon: Dumbbell }
+               ].map(s => (
+                 <button key={s.id} onClick={() => setSelectedProtocol(p => ({ ...p, source: s.id }))}
+                   style={{ 
+                     padding: 16, borderRadius: 16, border: '1px solid var(--border)', cursor: 'pointer',
+                     background: selectedProtocol.source === s.id ? 'var(--primary)' : 'rgba(255,255,255,0.02)',
+                     color: selectedProtocol.source === s.id ? 'black' : 'white',
+                     fontWeight: 800, fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                     transition: '0.2s'
+                   }}>
+                    <s.icon size={16} /> {s.label}
+                 </button>
+               ))}
             </div>
-          ))}
-        </div>
+         </div>
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-ghost" onClick={onClose} style={{ flex: 1, borderRadius: 14 }}>CANCEL</button>
-          <button className="btn btn-primary" onClick={handleSubmit} disabled={saving} style={{ flex: 2, borderRadius: 14 }}>
-            {saving ? <RefreshCw className="animate-spin" size={16} /> : <Zap size={16} />}
-            {saving ? 'SYNCING...' : 'APPLY PROTOCOL'}
-          </button>
-        </div>
+         {selectedProtocol.source === 'coach' && (
+           <div className="form-group">
+              <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)' }}>SELECT PROGRAM MATRIX</label>
+              <select className="form-select" style={{ borderRadius: 16, background: 'rgba(255,255,255,0.02)' }}
+                value={selectedProtocol.programId} onChange={e => setSelectedProtocol(p => ({ ...p, programId: e.target.value }))}>
+                <option value="">-- Deployment Matrix --</option>
+                {programs.map(p => <option key={p._id} value={p._id}>{p.name} ({p.difficulty.toUpperCase()})</option>)}
+              </select>
+           </div>
+         )}
+
+         <div className="glass-card-premium" style={{ padding: 20, borderRadius: 20, background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)' }}>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', color: '#60a5fa' }}>
+               <Info size={16} />
+               <div style={{ fontSize: '0.75rem', fontWeight: 700 }}>The selected protocol will be instantly visible in the member's biometric dashboard.</div>
+            </div>
+         </div>
+
+         <button className="btn-primary" style={{ padding: 16, borderRadius: 16, fontWeight: 900 }} disabled={saving} onClick={handleAssign}>
+            {saving ? 'SYNCHRONIZING...' : 'AUTHORIZE DEPLOYMENT'}
+         </button>
       </div>
     </Modal>
   );
 }
 
 export default function Members() {
+  const [members, setMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [members, setMembers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   const fetchMembers = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await membersApi.getAll({ 
-        search: searchTerm,
-        status: filterStatus !== 'all' ? filterStatus : undefined 
+        search: searchTerm, 
+        status: filterStatus === 'all' ? undefined : filterStatus 
       });
-      const data = res.data.data || [];
-      const mapped = data.map(m => ({
+      const mapped = res.data.data.map(m => ({
         id: m._id,
         name: `${m.firstName} ${m.lastName}`,
         email: m.email,
@@ -337,6 +271,32 @@ export default function Members() {
     setIsAssignModalOpen(true);
   };
 
+  const exportToCSV = () => {
+    if (members.length === 0) return toast.error("No data to export");
+    
+    const headers = ["ID", "Name", "Email", "Phone", "Status", "Plan", "Expiry"];
+    const rows = members.map(m => [
+      `"${m.memberId}"`,
+      `"${m.name}"`,
+      `"${m.email}"`,
+      `"${m.phone || 'N/A'}"`,
+      `"${m.status.toUpperCase()}"`,
+      `"${m.plan}"`,
+      `"${m.expiryDate ? new Date(m.expiryDate).toLocaleDateString() : 'N/A'}"`
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `gymflow_members_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Member workforce data exported");
+  };
+
   return (
     <div style={{ position: 'relative', minHeight: '100%' }}>
       <CyberMatrix opacity={0.03} />
@@ -357,7 +317,7 @@ export default function Members() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-ghost" style={{ borderRadius: 16, padding: '10px 20px', border: '1px solid rgba(255,255,255,0.05)' }} onClick={() => toast.success("Data compiled for export")}>
+          <button className="btn btn-ghost" style={{ borderRadius: 16, padding: '10px 20px', border: '1px solid rgba(255,255,255,0.05)' }} onClick={exportToCSV}>
             <Download size={18} /> EXPORT CSV
           </button>
           <button className="btn btn-primary" style={{ borderRadius: 16, padding: '10px 24px', boxShadow: '0 8px 25px rgba(var(--primary-rgb), 0.25)' }} onClick={() => setIsAddModalOpen(true)}>
@@ -449,60 +409,43 @@ export default function Members() {
                           <Avatar name={member.name} src={member.avatar} size="md" />
                           {member.status === 'active' && <div style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, background: 'var(--success)', border: '2px solid var(--surface)', borderRadius: '50%', boxShadow: '0 0 10px var(--success)' }} />}
                         </div>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 800, color: '#fff', fontSize: '1rem' }}>{member.name}</div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, letterSpacing: '0.05em' }}>{member.memberId}</div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '1rem', color: 'white' }}>{member.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-4)', fontWeight: 700, letterSpacing: '0.05em' }}>{member.memberId}</div>
                         </div>
                       </div>
                     </td>
-                    <td style={{ border: 'none' }}><StatusBadge status={member.status} /></td>
-                    <td style={{ border: 'none' }}><PlanBadge plan={member.plan} /></td>
                     <td style={{ border: 'none' }}>
-                      <div style={{ width: 140 }}>
-                        <DaysLeftBar expiry={member.expiryDate} />
+                      <StatusBadge status={member.status} />
+                    </td>
+                    <td style={{ border: 'none' }}>
+                      <PlanBadge plan={member.plan} />
+                    </td>
+                    <td style={{ border: 'none' }}>
+                      <div style={{ minWidth: 140 }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-3)', marginBottom: 4 }}>
+                          {member.expiryDate ? new Date(member.expiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '---'}
+                        </div>
+                        <DaysLeftBar expiryDate={member.expiryDate} />
                       </div>
                     </td>
                     <td style={{ border: 'none' }}>
-                      <div style={{ fontSize: '0.85rem' }}>
-                        <div style={{ fontWeight: 700, color: '#fff' }}>{member.phone || 'NO SECURE LINE'}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-4)', fontWeight: 600 }}>{member.email}</div>
-                      </div>
+                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-2)' }}>{member.email}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-4)' }}>{member.phone}</div>
+                       </div>
                     </td>
                     <td style={{ border: 'none' }}>
-                      <div style={{ 
-                        fontSize: '0.85rem', 
-                        fontWeight: 900, 
-                        color: 'var(--primary)', 
-                        background: 'rgba(var(--primary-rgb), 0.1)', 
-                        padding: '4px 10px', 
-                        borderRadius: 8,
-                        display: 'inline-block',
-                        letterSpacing: '0.1em'
-                      }}>
-                        {member.accessPin}
-                      </div>
+                       <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: 2 }}>
+                          {member.accessPin}
+                       </div>
                     </td>
-                    <td style={{ border: 'none', borderRadius: '0 20px 20px 0', position: 'relative', textAlign: 'right', paddingRight: 20 }}>
-                      <button
-                        className="btn-icon"
-                        style={{ color: 'var(--text-4)', background: 'rgba(255,255,255,0.03)', borderRadius: 12, width: 36, height: 36 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenMenuId(openMenuId === member.id ? null : member.id);
-                        }}
-                      >
-                        <MoreHorizontal size={18} />
-                      </button>
-                      <AnimatePresence>
-                        {openMenuId === member.id && (
-                          <MemberMenu
-                            member={member}
-                            onClose={() => setOpenMenuId(null)}
-                            onDelete={handleDelete}
-                            onAssign={handleAssignClick}
-                          />
-                        )}
-                      </AnimatePresence>
+                    <td style={{ border: 'none', borderRadius: '0 20px 20px 0', textAlign: 'right', paddingRight: 20 }}>
+                       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                          <button className="action-btn" title="Edit Biometrics" style={{ color: 'var(--text-3)' }}><Edit size={16} /></button>
+                          <button className="action-btn" title="Assign Protocol" style={{ color: 'var(--primary)' }} onClick={() => handleAssignClick(member)}><Zap size={16} /></button>
+                          <button className="action-btn" title="Terminate Access" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(member.id)}><Trash2 size={16} /></button>
+                       </div>
                     </td>
                   </motion.tr>
                 ))
@@ -511,20 +454,10 @@ export default function Members() {
           </table>
         </div>
       </div>
+      </motion.div>
 
-      <AddMemberModal 
-        isOpen={isAddModalOpen} 
-        onClose={() => setIsAddModalOpen(false)} 
-        onSuccess={fetchMembers} 
-      />
-
-      <AssignProtocolModal
-        isOpen={isAssignModalOpen}
-        onClose={() => setIsAssignModalOpen(false)}
-        member={selectedMember}
-        onSuccess={fetchMembers}
-      />
-    </motion.div>
+      <AddMemberModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={fetchMembers} />
+      {selectedMember && <AssignProgramModal isOpen={isAssignModalOpen} onClose={() => setIsAssignModalOpen(false)} member={selectedMember} />}
     </div>
   );
 }

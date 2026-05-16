@@ -4,16 +4,21 @@ const User = require('../models/User');
 const Gym = require('../models/Gym');
 const Member = require('../models/Member');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
+const emailService = require('../services/email.service');
 
 // Generate tokens
-const generateTokens = (userId) => {
+const generateTokens = (user) => {
   const accessToken = jwt.sign(
-    { userId },
+    { 
+      userId: user._id, 
+      gymId: user.gymId, 
+      role: user.role 
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRE || '15m' }
   );
   const refreshToken = jwt.sign(
-    { userId, family: uuidv4() },
+    { userId: user._id, family: uuidv4() },
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d' }
   );
@@ -45,6 +50,7 @@ const register = async (req, res, next) => {
     // 2. Create the gym with that ownerId
     const gym = await Gym.create({
       name: gymName,
+      slug: gymName.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
       phone: gymPhone || '',
       email,
       address: { city: gymCity || '' },
@@ -65,11 +71,16 @@ const register = async (req, res, next) => {
       isActive: true
     });
 
-    const { accessToken, refreshToken } = generateTokens(user._id);
+    const { accessToken, refreshToken } = generateTokens(user);
 
     // Store refresh token
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
+
+    // Send welcome email (async - don't block response)
+    emailService.sendWelcomeEmail({ firstName, email }).catch(err => {
+       console.error('Failed to send welcome email:', err);
+    });
 
     return successResponse(res, {
       user: user.toJSON(),
@@ -96,7 +107,7 @@ const login = async (req, res, next) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return errorResponse(res, 'Invalid credentials', 401);
 
-    const { accessToken, refreshToken } = generateTokens(user._id);
+    const { accessToken, refreshToken } = generateTokens(user);
     user.refreshToken = refreshToken;
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
@@ -145,7 +156,7 @@ const refreshToken = async (req, res, next) => {
       return errorResponse(res, 'Invalid refresh token', 401);
     }
 
-    const tokens = generateTokens(user._id);
+    const tokens = generateTokens(user);
     user.refreshToken = tokens.refreshToken;
     await user.save({ validateBeforeSave: false });
 
@@ -225,7 +236,9 @@ const updateMe = async (req, res, next) => {
     }
 
     // Basic URL validation for photo
-    if (photo !== undefined) {
+    if (req.file) {
+      member.photo = req.file.path; // Cloudinary URL
+    } else if (photo !== undefined) {
       if (photo === '' || photo.startsWith('http') || photo.startsWith('data:image')) {
         member.photo = photo;
       }
@@ -284,8 +297,8 @@ const forgotPassword = async (req, res, next) => {
     user.inviteTokenExpiry = Date.now() + 10 * 60 * 1000; // 10 mins
     await user.save();
 
-    // In a real app, send email here. For now, we log it.
-    console.log(`[AUTH] Password Reset OTP for ${email}: ${otp}`);
+    // Send reset email
+    await emailService.sendPasswordResetEmail(user, otp);
     
     return successResponse(res, null, 200, { message: 'If an account exists, a reset code has been sent.' });
   } catch (error) { next(error); }

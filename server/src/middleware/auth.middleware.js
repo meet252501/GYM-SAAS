@@ -10,6 +10,20 @@ const protect = async (req, res, next) => {
     }
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // OPTIMIZATION: Trust the token for ID, Gym, and Role.
+    // This saves 1 DB call on every single request across all 20 gyms.
+    if (decoded.gymId) {
+      req.user = {
+        _id: decoded.userId,
+        gymId: decoded.gymId,
+        role: decoded.role,
+        isActive: true // Assume active if token is valid (token expires in 15m)
+      };
+      return next();
+    }
+
+    // Fallback for older tokens or specific cases
     const user = await User.findById(decoded.userId).select('-passwordHash -refreshToken');
     if (!user || !user.isActive) {
       return errorResponse(res, 'User not found or inactive', 401);

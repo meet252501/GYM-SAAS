@@ -20,12 +20,6 @@ export default function NotificationBell() {
       setUnreadCount(countRes.data.count);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
-      // Fallback mock notifications
-      setNotifications([
-        { _id: '1', title: 'System Updated', message: 'Neural Sync is complete.', type: 'info', createdAt: new Date(Date.now() - 3600000).toISOString(), read: false },
-        { _id: '2', title: 'Training Mastered', message: 'You earned the Hypertrophy badge!', type: 'badge', createdAt: new Date(Date.now() - 86400000).toISOString(), read: false }
-      ]);
-      setUnreadCount(2);
     }
   }, []);
 

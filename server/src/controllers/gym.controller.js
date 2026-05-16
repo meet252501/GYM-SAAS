@@ -6,17 +6,10 @@ const logger = require('../utils/logger');
 // @access  Private (Owner/Trainer)
 exports.getSettings = async (req, res, next) => {
   try {
-    // For now, we assume there's only one gym per owner
-    let gym = await Gym.findOne({ ownerId: req.user._id });
+    const gym = await Gym.findById(req.user.gymId);
     
     if (!gym) {
-      // If no gym exists for this owner, create a default one
-      gym = await Gym.create({
-        name: 'GymFlow Pro',
-        ownerId: req.user._id,
-        address: { city: 'Unknown', country: 'IN' },
-        email: req.user.email
-      });
+      return res.status(404).json({ success: false, message: 'Gym not found' });
     }
 
     res.status(200).json({
@@ -34,13 +27,18 @@ exports.getSettings = async (req, res, next) => {
 // @access  Private (Owner)
 exports.updateSettings = async (req, res, next) => {
   try {
-    let gym = await Gym.findOne({ ownerId: req.user._id });
+    let gym = await Gym.findById(req.user.gymId);
 
     if (!gym) {
       return res.status(404).json({ success: false, message: 'Gym not found' });
     }
 
-    gym = await Gym.findByIdAndUpdate(gym._id, req.body, {
+    const updateData = { ...req.body };
+    if (req.file) {
+      updateData.logo = req.file.path; // Cloudinary URL
+    }
+
+    gym = await Gym.findByIdAndUpdate(gym._id, updateData, {
       new: true,
       runValidators: true
     });

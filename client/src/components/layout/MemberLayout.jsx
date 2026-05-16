@@ -1,6 +1,6 @@
 import { NavLink, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, Dumbbell, Bot, Camera, Fingerprint, Zap } from 'lucide-react';
+import { Home, Dumbbell, Bot, Camera, Fingerprint, Zap, HelpCircle } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import useAuthStore from '../../store/authStore';
 import NotificationBell from '../ui/NotificationBell';
@@ -193,6 +193,10 @@ export default function MemberLayout({ children }) {
             }} />
             <span style={{ fontSize: '9px', fontWeight: 800, color: '#22C55E', letterSpacing: '1px' }}>LIVE</span>
           </motion.div>
+
+          <Link to="/support" style={{ color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center' }}>
+            <HelpCircle size={18} />
+          </Link>
 
           <NotificationBell />
 

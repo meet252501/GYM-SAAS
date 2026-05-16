@@ -209,7 +209,7 @@ const getLeaderboard = async (req, res, next) => {
       streak: m.streak?.current || 0,
       rank: index + 1,
       tier: (m.totalPoints || 0) > 1000 ? 'Legendary' : (m.totalPoints || 0) > 500 ? 'Epic' : (m.totalPoints || 0) > 200 ? 'Rare' : 'Common',
-      change: 0 // Mocked for now
+      change: 0
     }));
 
     return successResponse(res, leaderboard);

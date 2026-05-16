@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Dumbbell, Play, Zap, 
@@ -91,13 +92,6 @@ function BioMetricTile({ icon, label, value, sub, color, change, delay = 0 }) {
 
 // ── Main Training Hub ───────────────────────────────────────────
 
-// ── Mock Initial Data (if API is empty) ──────────────────────
-import localExercises from '../../data/exerciseLibrary';
-
-const FALLBACK_EXERCISES = localExercises.slice(0, 12);
-
-import { useLocation } from 'react-router-dom';
-
 export default function TrainingHub() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -109,7 +103,11 @@ export default function TrainingHub() {
   // State for different modules
   const [activeProgram, setActiveProgram] = useState(null);
   const [exercises, setExercises] = useState([]);
-  const [progressData, setProgressData] = useState({ overview: null, weight: [], records: [] });
+  const [progressData, setProgressData] = useState({ 
+    overview: { streak: 0, totalWorkouts: 0, monthlySessions: 0, goal: 20, workoutsPerWeek: [0,0,0,0,0,0,0,0] }, 
+    weight: [], 
+    records: [] 
+  });
   const [selectedExercise, setSelectedExercise] = useState(null);
   
   const [currentExIndex, setCurrentExIndex] = useState(0);
@@ -173,7 +171,7 @@ export default function TrainingHub() {
         ]);
         
         setActiveProgram(progRes.data?.data?.[0]);
-        setExercises(exRes.data?.data?.length > 0 ? exRes.data.data : FALLBACK_EXERCISES);
+        setExercises(exRes.data?.data || []);
         setProgressData(prev => ({ 
           overview: overviewRes.data?.data || prev.overview, 
           weight: weightRes.data?.data || prev.weight, 
@@ -181,17 +179,6 @@ export default function TrainingHub() {
         }));
       } catch (err) {
         console.error('Hub data fetch error:', err);
-        // Fallback demo data for progression
-        setProgressData({
-          overview: { streak: 12, totalWorkouts: 48, monthlySessions: 14, goal: 20, workoutsPerWeek: [3, 4, 5, 2, 4, 6, 4, 3] },
-          weight: [{ weight: 82, date: new Date() }, { weight: 81.5, date: new Date() }, { weight: 80.8, date: new Date() }],
-          records: [{ exercise: 'Deadlift', weight: '180kg', reps: '3 reps', date: 'May 10', icon: '🏋️' }]
-        });
-        setExercises([
-          { _id: '1', name: 'Barbell Bench Press', muscle: 'chest', equipment: 'barbell', gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJ4Mnd6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxx6rO6uI8w/giphy.gif' },
-          { _id: '2', name: 'Dumbbell Squat', muscle: 'legs', equipment: 'dumbbell', gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJ4Mnd6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxx6rO6uI8w/giphy.gif' },
-          { _id: '3', name: 'Pull Ups', muscle: 'back', equipment: 'bodyweight', gifUrl: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJ4Mnd6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6Z3Z6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxx6rO6uI8w/giphy.gif' }
-        ]);
       } finally {
         setLoading(false);
       }
@@ -202,17 +189,7 @@ export default function TrainingHub() {
 
 
 
-  const displayPlan = activeProgram || {
-    name: 'Tactical Evolution Alpha',
-    description: 'A neural-optimized strength protocol for total domination.',
-    goal: 'Hypertrophy',
-    durationWeeks: 4,
-    daysPerWeek: 4,
-    sessions: [
-      { name: 'Upper Body Sync', exercises: FALLBACK_EXERCISES.slice(0, 3) },
-      { name: 'Lower Body Matrix', exercises: FALLBACK_EXERCISES.slice(3) }
-    ]
-  };
+  const displayPlan = activeProgram;
 
 
   const tabs = [

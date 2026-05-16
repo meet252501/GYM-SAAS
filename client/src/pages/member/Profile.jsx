@@ -203,7 +203,12 @@ export default function Profile() {
                         </div>
                       ))}
                    </div>
-                   <button className="btn-secondary" style={{ width: '100%', marginTop: 32, padding: 20, borderRadius: 20 }}>MANAGE SUBSCRIPTION</button>
+                   <button 
+                     className="btn-primary" 
+                     style={{ width: '100%', marginTop: 32, padding: 20, borderRadius: 20 }}
+                   >
+                     CONTACT ADMIN TO UPGRADE
+                   </button>
                 </div>
               )}
 

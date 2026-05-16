@@ -103,47 +103,53 @@ const searchFood = async (req, res, next) => {
 
     const NINJA_KEY = process.env.CALORIE_NINJAS_KEY;
 
-    if (NINJA_KEY) {
-      // CalorieNinjas — natural language search
-      const response = await fetch(`https://api.calorieninjas.com/v1/nutrition?query=${encodeURIComponent(q)}`, {
-        headers: { 'X-Api-Key': NINJA_KEY },
-      });
-      const data = await response.json();
-      const items = (data.items || []).map(item => ({
-        name:        item.name,
-        brand:       '',
-        barcode:     '',
-        servingSize: item.serving_size_g || 100,
-        calories:    Math.round(item.calories),
-        protein:     parseFloat((item.protein_g || 0).toFixed(1)),
-        carbs:       parseFloat((item.carbohydrates_total_g || 0).toFixed(1)),
-        fat:         parseFloat((item.fat_total_g || 0).toFixed(1)),
-        fiber:       parseFloat((item.fiber_g || 0).toFixed(1)),
-        source:      'CalorieNinjas',
-      }));
-      return successResponse(res, items);
+    if (NINJA_KEY && !q.match(/^\d+$/)) {
+      // CalorieNinjas — better for natural language like "3 eggs"
+      try {
+        const response = await fetch(`https://api.calorieninjas.com/v1/nutrition?query=${encodeURIComponent(q)}`, {
+          headers: { 'X-Api-Key': NINJA_KEY },
+        });
+        const data = await response.json();
+        if (data.items && data.items.length > 0) {
+          const items = data.items.map(item => ({
+            name:        item.name,
+            brand:       '',
+            barcode:     '',
+            servingSize: item.serving_size_g || 100,
+            calories:    Math.round(item.calories),
+            protein:     parseFloat((item.protein_g || 0).toFixed(1)),
+            carbs:       parseFloat((item.carbohydrates_total_g || 0).toFixed(1)),
+            fat:         parseFloat((item.fat_total_g || 0).toFixed(1)),
+            fiber:       parseFloat((item.fiber_g || 0).toFixed(1)),
+            source:      'CalorieNinjas',
+          }));
+          return successResponse(res, items);
+        }
+      } catch (err) {
+        console.warn('CalorieNinjas failed, falling back to Open Food Facts');
+      }
     }
 
-    // Fallback: Open Food Facts — free, no key needed
+    // Comprehensive Open Food Facts — Industry standard for global products
     const offRes = await fetch(
-      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=10&fields=product_name,brands,code,nutriments,serving_size`
+      `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=product_name,brands,code,nutriments,serving_size,image_front_small_url`
     );
     const offData = await offRes.json();
     const items = (offData.products || [])
-      .filter(p => p.product_name && p.nutriments?.['energy-kcal_100g'])
-      .slice(0, 10)
+      .filter(p => p.product_name && (p.nutriments?.['energy-kcal_100g'] || p.nutriments?.['energy-kcal']))
       .map(p => {
         const n = p.nutriments;
         return {
           name:        p.product_name,
-          brand:       p.brands || '',
+          brand:       p.brands || 'Generic',
           barcode:     p.code   || '',
+          image:       p.image_front_small_url || '',
           servingSize: 100,
-          calories:    Math.round(n['energy-kcal_100g'] || 0),
-          protein:     parseFloat((n['proteins_100g']        || 0).toFixed(1)),
-          carbs:       parseFloat((n['carbohydrates_100g']   || 0).toFixed(1)),
-          fat:         parseFloat((n['fat_100g']             || 0).toFixed(1)),
-          fiber:       parseFloat((n['fiber_100g']           || 0).toFixed(1)),
+          calories:    Math.round(n['energy-kcal_100g'] || n['energy-kcal'] || 0),
+          protein:     parseFloat((n['proteins_100g']        || n['proteins']        || 0).toFixed(1)),
+          carbs:       parseFloat((n['carbohydrates_100g']   || n['carbohydrates']   || 0).toFixed(1)),
+          fat:         parseFloat((n['fat_100g']             || n['fat']             || 0).toFixed(1)),
+          fiber:       parseFloat((n['fiber_100g']           || n['fiber']           || 0).toFixed(1)),
           source:      'Open Food Facts',
         };
       });

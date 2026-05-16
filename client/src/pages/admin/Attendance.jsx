@@ -239,8 +239,8 @@ export default function Attendance() {
 
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#fff', marginBottom: 8 }}>Kiosk Monitor</h2>
-              <p style={{ color: 'var(--text-3)', fontSize: '1.1rem' }}>Watching live entries from Terminal Kiosk</p>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: '#fff', marginBottom: 8 }}>Terminal Monitor</h2>
+              <p style={{ color: 'var(--text-3)', fontSize: '1.1rem' }}>Watching live entries from Attendance Terminal</p>
             </motion.div>
           </div>
 

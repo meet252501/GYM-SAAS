@@ -120,7 +120,7 @@ export default function Dashboard() {
       type: dashboardData?.revenue?.growth >= 0 ? 'up' : 'down' 
     },
     { 
-      label: 'Kiosk Entries', 
+      label: 'Terminal Entries', 
       value: `${dashboardData?.attendance?.today || 0}`, 
       icon: Smartphone, color: 'var(--danger)', 
       trend: 'Live', type: 'up' 

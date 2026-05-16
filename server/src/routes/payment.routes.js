@@ -5,8 +5,7 @@ const {
   getPayments,
   recordPayment,
   getPaymentStats,
-  downloadInvoice,
-  createStripeCheckout
+  downloadInvoice
 } = require('../controllers/payment.controller');
 
 router.use(protect);
@@ -14,7 +13,6 @@ router.use(protect);
 router.get('/', authorize('owner', 'trainer'), getPayments);
 router.post('/record', authorize('owner', 'trainer'), recordPayment);
 router.get('/stats', authorize('owner', 'trainer'), getPaymentStats);
-router.post('/stripe/checkout', createStripeCheckout);
 router.get('/:id/invoice', downloadInvoice);
 
 module.exports = router;

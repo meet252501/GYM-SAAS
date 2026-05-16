@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { programSchema } from '../../utils/validation';
 import { 
   Plus, Search, Edit2, Dumbbell, Calendar, Users, 
-  Filter, Info 
+  Filter 
 } from 'lucide-react';
 import { workoutsApi, membersApi } from '../../api';
 import Modal from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 import CyberMatrix from '../../components/ui/CyberMatrix';
-import ALL_EXERCISES from '../../data/exercises.json';
 
 export default function AdminPrograms() {
   const [programs, setPrograms] = useState([]);
@@ -18,72 +20,41 @@ export default function AdminPrograms() {
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [search, setSearch] = useState('');
   
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    difficulty: 'intermediate',
-    durationWeeks: 4,
-    daysPerWeek: 3,
-    tags: [],
-    exercises: [] // Array of { exerciseId, exerciseName, sets, reps, restSeconds }
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+    resolver: zodResolver(programSchema),
+    defaultValues: { name: '', description: '', difficulty: 'intermediate', durationWeeks: 4, daysPerWeek: 3 }
   });
 
-  const [allExercises, setAllExercises] = useState([]);
-
-  const [assignForm, setAssignForm] = useState({
-    memberId: '',
-    startDate: new Date().toISOString().split('T')[0]
-  });
-
+  const [assignForm, setAssignForm] = useState({ memberId: '', startDate: new Date().toISOString().split('T')[0] });
   const [members, setMembers] = useState([]);
 
   const fetchPrograms = async () => {
     try {
       const res = await workoutsApi.getPrograms();
       setPrograms(res.data.data || []);
-    } catch {
-      // Error handled
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* Error handled */ } finally { setLoading(false); }
   };
 
   const fetchMembers = async () => {
     try {
       const res = await membersApi.getAll({ limit: 100 });
       setMembers(res.data.data || []);
-    } catch {
-      // Error handled
-    }
-  };
-
-  const fetchExercises = async () => {
-    try {
-      const res = await workoutsApi.getExercises();
-      const apiEx = (res.data.data || []).map(ex => ({ ...ex, id: ex._id || ex.id }));
-      setAllExercises(apiEx.length > 0 ? apiEx : ALL_EXERCISES);
-    } catch {
-      setAllExercises(ALL_EXERCISES);
-    }
+    } catch { /* Error handled */ }
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchPrograms();
-      fetchMembers();
-      fetchExercises();
-    }, 0);
-    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPrograms();
+    fetchMembers();
   }, []);
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
+  const onCreate = async (data) => {
     try {
-      await workoutsApi.createProgram(formData);
+      await workoutsApi.createProgram({ ...data, tags: [], exercises: [] });
       toast.success('Program created successfully');
       setIsModalOpen(false);
+      reset();
       fetchPrograms();
-      setFormData({ name: '', description: '', difficulty: 'intermediate', durationWeeks: 4, daysPerWeek: 3, tags: [] });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create program');
     }
@@ -101,8 +72,8 @@ export default function AdminPrograms() {
   };
 
   const filteredPrograms = programs.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.difficulty.toLowerCase().includes(search.toLowerCase())
+    (p.name?.toLowerCase() || '').includes(search.toLowerCase()) ||
+    (p.difficulty?.toLowerCase() || '').includes(search.toLowerCase())
   );
 
   return (
@@ -205,16 +176,15 @@ export default function AdminPrograms() {
         onClose={() => setIsModalOpen(false)}
         title="Create New Program"
       >
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleSubmit(onCreate)} className="space-y-4">
           <div className="form-group">
             <label className="form-label">Program Title</label>
             <input 
-              className="form-input" 
-              required 
+              className={`form-input ${errors.name ? 'border-danger' : ''}`} 
               placeholder="e.g. 5x5 Strength Protocol"
-              value={formData.name}
-              onChange={e => setFormData({...formData, name: e.target.value})}
+              {...register('name')}
             />
+            {errors.name && <span className="text-danger text-xs font-bold">{errors.name.message}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Description</label>
@@ -222,18 +192,13 @@ export default function AdminPrograms() {
               className="form-input" 
               rows={3}
               placeholder="Overview of the program goals..."
-              value={formData.description}
-              onChange={e => setFormData({...formData, description: e.target.value})}
+              {...register('description')}
             />
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div className="form-group">
               <label className="form-label">Level</label>
-              <select 
-                className="form-select"
-                value={formData.difficulty}
-                onChange={e => setFormData({...formData, difficulty: e.target.value})}
-              >
+              <select className="form-select" {...register('difficulty')}>
                 <option value="beginner">Beginner</option>
                 <option value="intermediate">Intermediate</option>
                 <option value="advanced">Advanced</option>
@@ -243,120 +208,25 @@ export default function AdminPrograms() {
               <label className="form-label">Weeks</label>
               <input 
                 type="number" 
-                className="form-input" 
-                value={formData.durationWeeks}
-                onChange={e => setFormData({...formData, durationWeeks: parseInt(e.target.value)})}
+                className={`form-input ${errors.durationWeeks ? 'border-danger' : ''}`} 
+                {...register('durationWeeks', { valueAsNumber: true })}
               />
+              {errors.durationWeeks && <span className="text-danger text-xs font-bold">{errors.durationWeeks.message}</span>}
             </div>
             <div className="form-group">
               <label className="form-label">Days/Wk</label>
               <input 
                 type="number" 
-                className="form-input" 
-                value={formData.daysPerWeek}
-                onChange={e => setFormData({...formData, daysPerWeek: parseInt(e.target.value)})}
+                className={`form-input ${errors.daysPerWeek ? 'border-danger' : ''}`} 
+                {...register('daysPerWeek', { valueAsNumber: true })}
               />
+              {errors.daysPerWeek && <span className="text-danger text-xs font-bold">{errors.daysPerWeek.message}</span>}
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Add Exercises to Protocol</label>
-            <div className="flex gap-2 mb-3">
-              <select 
-                className="form-select flex-1"
-                onChange={(e) => {
-                  const ex = allExercises.find(x => (x.id || x._id) === e.target.value);
-                  if (ex && !formData.exercises.find(item => item.exerciseId === (ex.id || ex._id))) {
-                    setFormData({
-                      ...formData,
-                      exercises: [...formData.exercises, { 
-                        exerciseId: ex.id || ex._id, 
-                        exerciseName: ex.name, 
-                        sets: 3, 
-                        reps: '12', 
-                        restSeconds: 90 
-                      }]
-                    });
-                  }
-                  e.target.value = "";
-                }}
-              >
-                <option value="">-- Select Exercise to Add --</option>
-                {allExercises.map(ex => (
-                  <option key={ex.id || ex._id} value={ex.id || ex._id}>{ex.name} ({ex.muscle || ex.category})</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-              {formData.exercises.map((ex, idx) => (
-                <div key={ex.exerciseId} className="flex flex-col gap-2 p-3 bg-surface-3 rounded-lg border border-border">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-bold">{ex.exerciseName}</span>
-                    <button 
-                      type="button" 
-                      onClick={() => setFormData({
-                        ...formData, 
-                        exercises: formData.exercises.filter((_, i) => i !== idx)
-                      })}
-                      className="text-error hover:opacity-80 transition-opacity"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] text-faint uppercase">Sets</span>
-                      <input 
-                        type="number" 
-                        className="form-input py-1 px-2 text-xs" 
-                        value={ex.sets}
-                        onChange={e => {
-                          const newEx = [...formData.exercises];
-                          newEx[idx].sets = parseInt(e.target.value);
-                          setFormData({...formData, exercises: newEx});
-                        }}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] text-faint uppercase">Reps</span>
-                      <input 
-                        type="text" 
-                        className="form-input py-1 px-2 text-xs" 
-                        value={ex.reps}
-                        onChange={e => {
-                          const newEx = [...formData.exercises];
-                          newEx[idx].reps = e.target.value;
-                          setFormData({...formData, exercises: newEx});
-                        }}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] text-faint uppercase">Rest (s)</span>
-                      <input 
-                        type="number" 
-                        className="form-input py-1 px-2 text-xs" 
-                        value={ex.restSeconds}
-                        onChange={e => {
-                          const newEx = [...formData.exercises];
-                          newEx[idx].restSeconds = parseInt(e.target.value);
-                          setFormData({...formData, exercises: newEx});
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {formData.exercises.length === 0 && (
-                <div className="text-center py-4 text-xs text-faint bg-surface-2 rounded-lg border border-dashed border-border">
-                  No exercises added yet
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn-ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Create Protocol</button>
+          <div className="flex gap-3 pt-4">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-ghost flex-1">Cancel</button>
+            <button type="submit" className="btn btn-primary flex-1">Authorize Protocol</button>
           </div>
         </form>
       </Modal>
@@ -365,40 +235,35 @@ export default function AdminPrograms() {
       <Modal 
         isOpen={isAssignModalOpen} 
         onClose={() => setIsAssignModalOpen(false)}
-        title={`Assign ${selectedProgram?.name}`}
+        title="Assign Protocol"
       >
         <form onSubmit={handleAssign} className="space-y-4">
           <div className="form-group">
-            <label className="form-label">Select Member</label>
+            <label className="form-label">Target Member</label>
             <select 
               className="form-select" 
               required
               value={assignForm.memberId}
               onChange={e => setAssignForm({...assignForm, memberId: e.target.value})}
             >
-              <option value="">-- Select Member --</option>
+              <option value="">Select Member...</option>
               {members.map(m => (
-                <option key={m._id} value={m._id}>{m.firstName} {m.lastName} ({m.memberId})</option>
+                <option key={m._id} value={m._id}>{m.firstName} {m.lastName}</option>
               ))}
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">Start Date</label>
+            <label className="form-label">Deployment Start Date</label>
             <input 
               type="date" 
               className="form-input" 
-              required
               value={assignForm.startDate}
               onChange={e => setAssignForm({...assignForm, startDate: e.target.value})}
             />
           </div>
-          <div className="p-4 bg-primary/5 rounded-xl border border-primary/10 flex gap-3">
-            <Info className="text-primary flex-shrink-0" size={20} />
-            <p className="text-xs text-faint">Assigning this program will update the member's current training protocol and notify them via the mobile app.</p>
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn-ghost" onClick={() => setIsAssignModalOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Confirm Assignment</button>
+          <div className="flex gap-3 pt-4">
+            <button type="button" onClick={() => setIsAssignModalOpen(false)} className="btn btn-ghost flex-1">Abort</button>
+            <button type="submit" className="btn btn-primary flex-1">Sync Neural Link</button>
           </div>
         </form>
       </Modal>

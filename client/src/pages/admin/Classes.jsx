@@ -93,7 +93,6 @@ function ClassModal({ onClose, onSave, existing }) {
 
 // ─── Manage Attendees Modal ──────────────────────────────────
 function AttendeesModal({ cls, onClose }) {
-  const mockAttendees = Array.from({ length: cls.booked }, (_, i) => `Member ${i + 1}`);
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="modal" style={{ maxWidth: 400 }}>
@@ -102,13 +101,7 @@ function AttendeesModal({ cls, onClose }) {
           <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={18} /></button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 340, overflowY: 'auto' }}>
-          {mockAttendees.map((a, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', background: 'var(--surface-2)', borderRadius: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--surface-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--primary)', fontSize: '0.8rem' }}>{i + 1}</div>
-              <div style={{ fontWeight: 600 }}>Gym Member #{i + 1}</div>
-              <div style={{ marginLeft: 'auto' }}><span className="badge badge-active">Booked</span></div>
-            </div>
-          ))}
+          <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-3)' }}>Attendee list not available in this view.</div>
         </div>
         <div style={{ marginTop: 16, textAlign: 'right' }}>
           <button className="btn btn-ghost" onClick={onClose}>Close</button>

@@ -19,6 +19,7 @@ const dietPlanRoutes   = require('./routes/dietPlan.routes');
 const membershipRoutes = require('./routes/membership.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const aiRoutes = require('./routes/ai.routes');
+const { protect } = require('./middleware/auth.middleware');
 const errorHandler = require('./middleware/error.middleware');
 const logger = require('./utils/logger');
 
@@ -41,8 +42,18 @@ app.use(cors({
 // ─── Rate limiting ───────────────────────────────────────────
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
+const aiLimiter = rateLimit({ 
+  windowMs: 15 * 60 * 1000, 
+  max: 10, 
+  message: { success: false, message: 'AI limit reached (Rate Limited). Please try again in 15 minutes.' } 
+});
+
 app.use('/api/', limiter);
 app.use('/api/v1/auth', authLimiter);
+app.use('/api/v1/ai', aiLimiter);
+
+// ─── Webhooks (raw body — MUST come before express.json) ─────
+// Webhooks removed.
 
 // ─── Body parsing ────────────────────────────────────────────
 app.use(express.json({ limit: '10mb' }));
@@ -53,6 +64,10 @@ app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().
 
 // ─── API Routes ──────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
+
+// Apply protection to all subsequent routes
+app.use(protect);
+
 app.use('/api/v1/members', memberRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/attendance', attendanceRoutes);
@@ -67,6 +82,7 @@ app.use('/api/v1/diet-plans', dietPlanRoutes);
 app.use('/api/v1/memberships', membershipRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/metrics', require('./routes/metrics.routes'));
 app.use('/api/v1/metrics', require('./routes/metrics.routes'));
 
 // ─── 404 handler ─────────────────────────────────────────────

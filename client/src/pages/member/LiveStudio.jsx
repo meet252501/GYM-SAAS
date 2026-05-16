@@ -9,13 +9,6 @@ import CyberMatrix from '../../components/ui/CyberMatrix';
 import { classesApi } from '../../api';
 import { toast } from 'react-hot-toast';
 
-// ── Mock Initial Data (if API is empty) ──────────────────────
-const MOCK_CLASSES = [
-  { _id: '1', name: 'Neural HIIT', instructor: 'Marcus V.', time: '08:00 AM', duration: '45m', capacity: 20, booked: 18, type: 'Cardio', category: 'High Intensity', difficulty: 'Advanced', isBookedByUser: true, img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=80' },
-  { _id: '2', name: 'Power Flow', instructor: 'Sarah L.', time: '10:30 AM', duration: '60m', capacity: 15, booked: 15, type: 'Strength', category: 'Functional', difficulty: 'Intermediate', isBookedByUser: false, img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80' },
-  { _id: '3', name: 'Cyber Yoga', instructor: 'Elena R.', time: '05:00 PM', duration: '60m', capacity: 25, booked: 12, type: 'Flexibility', category: 'Mindfulness', difficulty: 'Beginner', isBookedByUser: false, img: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&q=80' },
-];
-
 function BookingModal({ cls, onConfirm, onClose, loading }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -89,10 +82,9 @@ export default function MemberClasses() {
         img: s.classId?.img || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&q=80',
         isBookedByUser: false // We'll update this if we have a list of user bookings
       }));
-
-      setClasses(sessionData.length > 0 ? sessionData : MOCK_CLASSES);
+      setClasses(sessionData);
     } catch {
-      setClasses(MOCK_CLASSES);
+      setClasses([]);
     } finally {
       setLoading(false);
     }
@@ -107,15 +99,6 @@ export default function MemberClasses() {
     if (!bookingCls) return;
     setProcLoading(true);
     try {
-      // Demo Mode Fallback for Mock IDs
-      if (['1', '2', '3'].includes(bookingCls._id)) {
-        await new Promise(r => setTimeout(r, 800)); // Artificial latency
-        toast.success("Spot Secured! (Neural Link Active)");
-        setClasses(prev => prev.map(c => c._id === bookingCls._id ? { ...c, isBookedByUser: true, booked: Math.min(c.booked + 1, c.capacity) } : c));
-        setBookingCls(null);
-        return;
-      }
-
       const res = await classesApi.book(bookingCls._id);
       
       if (res.status === 200 || res.status === 201) {
@@ -128,14 +111,9 @@ export default function MemberClasses() {
     } catch (err) {
       console.error("Booking Error:", err);
       const msg = err.response?.data?.message || err.message || "Protocol Interrupted";
-      
-      // If it's a connection error or a 404 on a likely-dev environment, simulate success
-      if (!err.response || err.response.status === 404 || err.response.status === 500) {
-        toast.success("Sync Bypassed (Demo Success)");
-        setClasses(prev => prev.map(c => c._id === bookingCls._id ? { ...c, isBookedByUser: true, booked: Math.min(c.booked + 1, c.capacity) } : c));
-      } else {
+      if (err.response) {
         const readableMsg = msg.includes("already booked") ? "You've already secured a spot." : 
-                           msg.includes("full") ? "Session capacity reached." : `ERROR: ${msg}`;
+                            msg.includes("full") ? "Session capacity reached." : `ERROR: ${msg}`;
         toast.error(readableMsg);
       }
       

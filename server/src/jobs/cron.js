@@ -55,7 +55,7 @@ const runMembershipSweep = async () => {
 
     for (const member of members1Day) {
       if (member.userId) {
-        await Notification.create({
+        await NotificationService.send({
           recipientId: member.userId,
           gymId: member.gymId,
           type: 'membership_expiry',
@@ -82,7 +82,7 @@ const runMembershipSweep = async () => {
 
       // Notify the member
       if (member.userId) {
-        await Notification.create({
+        await NotificationService.send({
           recipientId: member.userId,
           gymId: member.gymId,
           type: 'membership_expiry',
@@ -95,7 +95,7 @@ const runMembershipSweep = async () => {
       // Notify owner(s) or staff at the gym
       const owners = await User.find({ gymId: member.gymId, role: { $in: ['owner', 'staff'] } });
       for (const owner of owners) {
-        await Notification.create({
+        await NotificationService.send({
           recipientId: owner._id,
           gymId: member.gymId,
           type: 'membership_expiry',
@@ -114,8 +114,7 @@ const runMembershipSweep = async () => {
 };
 
 const cronParser = require('cron-parser');
-const GymClass = require('../models/GymClass');
-const ClassSession = require('../models/ClassSession');
+const { GymClass, ClassSession } = require('../models/GymClass');
 
 /**
  * Automatically generate class sessions for the next 7 days based on recurring rules.

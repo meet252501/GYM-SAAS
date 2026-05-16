@@ -23,8 +23,9 @@ exports.getOverview = async (req, res, next) => {
       checkedInAt: { $gte: startOfMonth }
     });
 
-    // 3. Workouts per week (Last 8 weeks)
+    // 3. Workouts & Volume per week (Last 8 weeks)
     const workoutsPerWeek = [];
+    const volumePerWeek = [];
     for (let i = 7; i >= 0; i--) {
       const start = new Date();
       start.setDate(start.getDate() - (i + 1) * 7);
@@ -34,11 +35,20 @@ exports.getOverview = async (req, res, next) => {
       end.setDate(end.getDate() - i * 7);
       end.setHours(23, 59, 59, 999);
 
+      // Attendance count
       const count = await Attendance.countDocuments({
         memberId: member._id,
         checkedInAt: { $gte: start, $lte: end }
       });
       workoutsPerWeek.push(count);
+
+      // Volume aggregation
+      const logs = await WorkoutLog.find({
+        memberId: member._id,
+        date: { $gte: start, $lte: end }
+      });
+      const weekVolume = logs.reduce((sum, log) => sum + (log.totalVolume || 0), 0);
+      volumePerWeek.push(weekVolume);
     }
 
     return successResponse(res, {
@@ -46,7 +56,8 @@ exports.getOverview = async (req, res, next) => {
       totalWorkouts,
       monthlySessions: `${monthlySessionsCount} sessions`,
       workoutsPerWeek,
-      goal: 20 // Mock goal for now
+      volumePerWeek,
+      goal: 20
     });
   } catch (error) { next(error); }
 };

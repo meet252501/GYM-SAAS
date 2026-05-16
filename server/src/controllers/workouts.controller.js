@@ -196,6 +196,19 @@ const createWorkoutLog = async (req, res, next) => {
       return errorResponse(res, 'At least one exercise is required in log', 400);
     }
 
+    // 1. Pre-fetch all existing Personal Records for these exercises in ONE query
+    const PersonalRecord = require('../models/PersonalRecord');
+    const exerciseIds = exercises.map(ex => ex.exerciseId || ex.exercise).filter(Boolean);
+    const existingPRs = await PersonalRecord.find({
+      memberId: member._id,
+      exerciseId: { $in: exerciseIds }
+    });
+    
+    const prMap = {};
+    existingPRs.forEach(pr => {
+      prMap[pr.exerciseId.toString()] = pr.value;
+    });
+
     let calculatedVolume = 0;
     const enrichedExercises = [];
 
@@ -203,47 +216,26 @@ const createWorkoutLog = async (req, res, next) => {
       const exerciseId = loggedExercise.exerciseId || loggedExercise.exercise;
       if (!exerciseId) continue;
 
-      // Calculate volume for this exercise & check Personal Records (PR)
       const setsWithPR = [];
       let setCounter = 1;
-
-      // Find member's previous maximum weight logged for this specific exercise
-      const previousLogs = await WorkoutLog.find({
-        memberId: member._id,
-        'exercises.exerciseId': exerciseId
-      });
-
-      let historicalMaxWeight = 0;
-      previousLogs.forEach(log => {
-        log.exercises.forEach(ex => {
-          if (ex.exerciseId.toString() === exerciseId.toString()) {
-            ex.sets.forEach(set => {
-              if (set.weight > historicalMaxWeight) {
-                historicalMaxWeight = set.weight;
-              }
-            });
-          }
-        });
-      });
+      let historicalMaxWeight = prMap[exerciseId.toString()] || 0;
 
       for (const set of loggedExercise.sets) {
         const weight = set.weight || 0;
         const reps = set.reps || 0;
         calculatedVolume += weight * reps;
 
-        // Auto PR detection logic: if logged weight is greater than historical max, mark as PR
+        // Auto PR detection logic
         const isPR = weight > 0 && weight > historicalMaxWeight;
         if (isPR) {
-          historicalMaxWeight = weight; // update max for consecutive sets in the same workout
+          historicalMaxWeight = weight;
           
-          // SAVE TO PERSONAL RECORDS COLLECTION
-          await require('../models/PersonalRecord').findOneAndUpdate(
+          await PersonalRecord.findOneAndUpdate(
             { memberId: member._id, exerciseId: exerciseId },
             { 
               value: weight, 
               reps, 
               exerciseName: loggedExercise.exerciseName,
-              logId: undefined, // Will update after log is created
               achievedAt: new Date() 
             },
             { upsert: true, new: true }
@@ -277,7 +269,7 @@ const createWorkoutLog = async (req, res, next) => {
       notes,
       exercises: enrichedExercises,
       totalVolume: calculatedVolume,
-      caloriesBurned: caloriesBurned || Math.round((duration || 60) * 7.5), // Estimate ~7.5 cal/min
+      caloriesBurned: caloriesBurned || Math.round((duration || 60) * 7.5),
       mood: mood || 'okay'
     });
 

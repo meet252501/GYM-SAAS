@@ -14,12 +14,7 @@ const useAuthStore = create(
         const token = localStorage.getItem('accessToken');
         if (!token) { set({ isLoading: false }); return; }
 
-        if (token === 'dev-test-token') {
-          const mockUser = { _id: 'm1', firstName: 'Meet', lastName: 'Sutariya', email: 'member@gymflow.io', role: 'member', membershipPlan: 'ELITE' };
-          const mockGym = { _id: 'gym1', name: 'GymFlow Pro' };
-          set({ user: mockUser, gym: mockGym, isAuthenticated: true, isLoading: false });
-          return;
-        }
+
 
         try {
           const { data } = await authApi.getMe();
@@ -62,7 +57,7 @@ const useAuthStore = create(
         try { await authApi.logout(); } catch (e) { console.error('Logout error:', e); }
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        localStorage.removeItem('mock_member_user');
+
         set({ user: null, gym: null, isAuthenticated: false });
       },
 

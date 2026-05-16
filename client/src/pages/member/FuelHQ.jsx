@@ -319,7 +319,7 @@ function SearchModal({ date, meal, onClose, onAdded, autoScan }) {
              
              <div style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: 6 }}>
                 <input type="file" ref={galInputRef} onChange={handleImageUpload} style={{ display: 'none' }} accept="image/*" />
-                <button onClick={() => setShowLiveCam(true)} style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button title="Live AI Scan" onClick={() => setShowLiveCam(true)} style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Camera size={18} />
                 </button>
                 <button onClick={() => galInputRef.current?.click()} style={{ width: 38, height: 38, borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -384,9 +384,15 @@ function SearchModal({ date, meal, onClose, onAdded, autoScan }) {
                     border: `1px solid ${selected === item ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.05)'}`,
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center' 
                   }}>
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: selected === item ? 'var(--primary)' : 'white' }}>{item.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginTop: '4px' }}>P:{item.protein}g · C:{item.carbs}g · F:{item.fat}g</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.95rem', color: selected === item ? 'var(--primary)' : 'white', display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {item.name}
+                      {item.brand && <span style={{ fontSize: '0.6rem', color: 'var(--text-4)', background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{item.brand.toUpperCase()}</span>}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', marginTop: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>P:{item.protein}g · C:{item.carbs}g · F:{item.fat}g</span>
+                      <span style={{ fontSize: '0.6rem', opacity: 0.4 }}>{item.source === 'Open Food Facts' ? 'OFF_GLOBAL' : 'NINJA_NLP'}</span>
+                    </div>
                   </div>
                   <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'white' }}>{item.calories}</div>
                 </motion.div>
@@ -576,10 +582,7 @@ export default function Nutrition() {
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               setAddModal('snack');
-              setTimeout(() => {
-                const scanBtn = document.querySelector('[title="Live AI Scan"]');
-                if (scanBtn) scanBtn.click();
-              }, 300);
+              setAutoScan(true);
             }}
             style={{ 
               padding: '12px 20px', background: 'var(--primary)', border: 'none', borderRadius: '16px',
@@ -723,7 +726,7 @@ export default function Nutrition() {
                 { label: 'AVG CALORIES', value: Math.round(weekly.reduce((s,d)=>s+d.calories,0)/Math.max(weekly.length,1)), icon: Flame, color: '#f59e0b' },
                 { label: 'DAYS LOGGED', value: `${weekly.filter(d=>d.calories>0).length}/7`, icon: CalendarIcon, color: '#3b82f6' },
                 { label: 'TOP DAY', value: Math.max(...weekly.map(d=>d.calories)), icon: Award, color: '#10b981' },
-                { label: 'AVG PROTEIN', value: '142g', icon: Activity, color: '#8b5cf6' }
+                { label: 'AVG PROTEIN', value: `${Math.round(weekly.reduce((s,d)=>s+d.protein,0)/Math.max(weekly.length,1))}g`, icon: Activity, color: '#8b5cf6' }
               ].map((s, i) => (
                 <div key={i} style={{ padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-4)', marginBottom: '8px' }}>{s.label}</div>
