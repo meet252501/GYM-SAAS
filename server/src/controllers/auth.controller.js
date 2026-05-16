@@ -328,9 +328,4 @@ const resetPassword = async (req, res, next) => {
     return successResponse(res, null, 200, { message: 'Password updated successfully. Access restored.' });
   } catch (error) { next(error); }
 };
-const nukeDB = async (req, res, next) => {
-  try {
-    const mongoose = require('mongoose');
-    const db = mongoose.connection.db;
-    
 module.exports = { register, login, refreshToken, logout, getMe, updateMe, forgotPassword, resetPassword };
