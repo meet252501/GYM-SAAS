@@ -36,6 +36,7 @@ class EmailService {
 
   // ── Gym owner signup welcome ──────────────────────────────────
   async sendWelcomeEmail({ firstName, email }) {
+    const clientUrl = process.env.CLIENT_URL || 'https://gymflow-lilac-seven.vercel.app';
     return this.sendEmail(
       email,
       `Welcome to GymFlow Pro, ${firstName}!`,
@@ -54,7 +55,7 @@ class EmailService {
       <div style="color:#F59E0B;font-size:13px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">SYSTEM STATUS</div>
       <div style="color:#22C55E;font-size:20px;font-weight:900;letter-spacing:1px;">ALL SYSTEMS OPERATIONAL</div>
     </div>
-    <a href="${process.env.CLIENT_URL}/login" style="display:block;background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;text-decoration:none;text-align:center;padding:16px;border-radius:12px;font-weight:800;font-size:15px;letter-spacing:0.5px;">
+    <a href="${clientUrl}/login" style="display:block;background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;text-decoration:none;text-align:center;padding:16px;border-radius:12px;font-weight:800;font-size:15px;letter-spacing:0.5px;">
       Initialize Dashboard →
     </a>
   </div>
