@@ -3,6 +3,26 @@ const { Membership } = require('../models/Membership');
 const { PLAN_LIMITS, DEFAULT_LIMIT } = require('../config/ai.config');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 
+// ── Lightweight rule-based AI (works with zero API key) ───────
+const RULES = [
+  { keys: ['chest','bench','push'], reply: '💪 **Chest Protocol**: Incline DB Press 4x8, Flat Bench 3x6, Cable Flyes 3x12, Weighted Dips 3xAMRAP. Rest 90s between sets. Focus on the mind-muscle connection at peak contraction.' },
+  { keys: ['leg','squat','glute','quad'], reply: '🦵 **Leg Protocol**: Barbell Squats 4x6, Romanian Deadlift 3x10, Leg Press 3x12, Walking Lunges 3x20m. Hydrate 500ml before starting.' },
+  { keys: ['back','pull','row','deadlift'], reply: '🏋️ **Back Protocol**: Deadlift 3x5, Pull-ups 4x8, Cable Rows 3x12, Face Pulls 3x15. Retract scapula on every pull.' },
+  { keys: ['shoulder','delt','press'], reply: '💪 **Shoulder Protocol**: OHP 4x6, Lateral Raises 4x15, Reverse Pec Deck 3x12, Shrugs 3x10. Keep elbows slightly bent on laterals.' },
+  { keys: ['cardio','hiit','fat','burn','lose'], reply: '🔥 **HIIT Protocol**: 30s sprint / 90s walk × 10 rounds. Target 85-90% max HR during sprints. EPOC effect burns calories for 24hrs post-session.' },
+  { keys: ['protein','diet','nutrition','eat','calorie','meal'], reply: '🥗 **Nutrition Protocol**: Target 2.2g protein/kg bodyweight. Split meals every 3-4h. Pre-workout: carbs + protein. Post-workout: 40g protein within 60 mins.' },
+  { keys: ['rest','recovery','sleep','sore'], reply: '😴 **Recovery Protocol**: 7.5-9h sleep mandatory. Growth hormone peaks in deep sleep. Active recovery (20min walk) clears lactic acid. Hydrate 3.5L/day.' },
+  { keys: ['plan','program','routine','week','beginner'], reply: '📋 **Starter Protocol (3-Day Split)**:\n- Day 1: Push (Chest/Shoulder/Triceps)\n- Day 2: Pull (Back/Biceps)\n- Day 3: Legs\nRest between sessions. Progressive overload weekly.' },
+];
+
+function ruleBasedReply(msg) {
+  const q = (msg || '').toLowerCase();
+  for (const r of RULES) {
+    if (r.keys.some(k => q.includes(k))) return r.reply;
+  }
+  return '🤖 **GymFlow AI** is ready.\n\nAsk me about:\n- **Workouts**: chest, legs, back, shoulders\n- **Cardio**: HIIT, fat loss\n- **Nutrition**: protein, diet, calories\n- **Recovery**: sleep, soreness\n\n_Example: "Give me a chest workout"_';
+}
+
 /**
  * Get current AI usage and limit for the logged-in member
  */
@@ -116,9 +136,13 @@ exports.chatWithAI = async (req, res) => {
     const { messages } = req.body;
     const apiKey = process.env.GROQ_API_KEY;
 
-    if (!apiKey) return errorResponse(res, 'AI Service Key not configured', 500);
+    // ── No API key: use built-in rule engine instantly ───────────
+    if (!apiKey) {
+      const userMsg = [...(messages || [])].reverse().find(m => m.role === 'user')?.content || '';
+      return successResponse(res, { reply: ruleBasedReply(userMsg), source: 'local' });
+    }
 
-    // Track usage first (throws 403 if over limit)
+    // Track usage
     const usageResult = await exports.internalTrackUsage(req.user);
     if (!usageResult.success) return errorResponse(res, usageResult.message, 403);
 
@@ -130,16 +154,14 @@ exports.chatWithAI = async (req, res) => {
 
     if (!response.ok) throw new Error(`Groq API error: ${response.status}`);
     const data = await response.json();
-    
-    return successResponse(res, { 
-      reply: data.choices[0].message.content,
-      usage: usageResult.data
-    });
+    return successResponse(res, { reply: data.choices[0].message.content, usage: usageResult.data });
   } catch (error) {
     console.error('AI Chat Error:', error);
-    return errorResponse(res, 'AI Coach is temporarily unavailable');
+    const userMsg = [...(req.body?.messages || [])].reverse().find(m => m.role === 'user')?.content || '';
+    return successResponse(res, { reply: ruleBasedReply(userMsg), source: 'fallback' });
   }
 };
+
 
 /**
  * AI Vision Proxy (Gemini)

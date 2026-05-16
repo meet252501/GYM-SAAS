@@ -13,20 +13,9 @@ exports.getPlans = catchAsync(async (req, res) => {
   // If no plans exist, create default ones for a better UX
   if (plans.length === 0) {
     const defaults = [
-      { 
-        gymId: req.user.gymId, 
-        name: 'Basic Workforce', 
-        price: 1500, 
-        duration: { value: 1, unit: 'month' },
-        features: ['Gym Access', 'Locker Room']
-      },
-      { 
-        gymId: req.user.gymId, 
-        name: 'Elite Cyber', 
-        price: 4000, 
-        duration: { value: 3, unit: 'month' },
-        features: ['Gym Access', 'Personal Trainer', 'Nutrition Plan']
-      }
+      { gymId: req.user.gymId, name: 'Monthly',   price: 999,  duration: { value: 1,  unit: 'month' }, isActive: true, features: ['Gym Access', 'Locker Room'] },
+      { gymId: req.user.gymId, name: 'Quarterly', price: 2499, duration: { value: 3,  unit: 'month' }, isActive: true, features: ['Gym Access', 'Locker Room', 'Trainer Check-in'] },
+      { gymId: req.user.gymId, name: 'Annual',    price: 7999, duration: { value: 12, unit: 'month' }, isActive: true, features: ['Gym Access', 'Personal Trainer', 'Nutrition Plan'] },
     ];
     plans = await MembershipPlan.insertMany(defaults);
   }
