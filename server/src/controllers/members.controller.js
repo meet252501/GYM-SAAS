@@ -22,8 +22,10 @@ const generateAccessPin = () =>
 // @route   GET /api/v1/members
 const getMembers = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, search, status, sortBy = 'joinedAt', order = 'desc' } = req.query;
-    const query = { gymId: req.user.gymId, isActive: true };
+    const gym = await Gym.findById(req.user.gymId);
+    
+    // Exclude the owner from the members list
+    const query = { gymId: req.user.gymId, isActive: true, userId: { $ne: gym.ownerId } };
 
     if (search) {
       query.$or = [

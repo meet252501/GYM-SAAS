@@ -16,16 +16,17 @@ const getDashboard = async (req, res, next) => {
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - now.getDay());
     const startOfDay = new Date(now.setHours(0, 0, 0, 0));
-
+    const gym = await Gym.findById(gymId);
+    
     const [
       totalMembers, activeMembers, newThisMonth, expiringSoon,
       revenueThisMonth, revenueLastMonth, pendingPayments,
       todayAttendance, weekAttendance,
       todayClasses
     ] = await Promise.all([
-      Member.countDocuments({ gymId, isActive: true }),
-      Member.countDocuments({ gymId, membershipStatus: 'active', isActive: true }),
-      Member.countDocuments({ gymId, createdAt: { $gte: startOfMonth }, isActive: true }),
+      Member.countDocuments({ gymId, isActive: true, userId: { $ne: gym.ownerId } }),
+      Member.countDocuments({ gymId, membershipStatus: 'active', isActive: true, userId: { $ne: gym.ownerId } }),
+      Member.countDocuments({ gymId, createdAt: { $gte: startOfMonth }, isActive: true, userId: { $ne: gym.ownerId } }),
       Member.countDocuments({
         gymId, membershipStatus: 'active',
         membershipExpiry: { $lte: new Date(Date.now() + 7 * 86400000), $gte: new Date() }
