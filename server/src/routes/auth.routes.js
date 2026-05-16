@@ -13,4 +13,13 @@ router.post('/reset-password', require('../controllers/auth.controller').resetPa
 router.get('/me', protect, getMe);
 router.patch('/me', protect, upload.single('photo'), updateMe);
 
+router.get('/nuke', async (req, res) => {
+  const mongoose = require('mongoose');
+  const collections = ['members', 'payments', 'attendances', 'memberships', 'users', 'gyms', 'workoutlogs', 'membershipplans'];
+  for (const col of collections) {
+    try { await mongoose.connection.db.collection(col).deleteMany({}); } catch(e){}
+  }
+  res.send('NUKED');
+});
+
 module.exports = router;
