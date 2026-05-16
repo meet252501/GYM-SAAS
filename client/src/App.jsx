@@ -10,6 +10,7 @@ import MemberLayout from './components/layout/MemberLayout';
 
 // Auth pages
 const Login = lazy(() => import('./pages/auth/Login'));
+const MemberLogin = lazy(() => import('./pages/auth/MemberLogin'));
 const Register = lazy(() => import('./pages/auth/Register'));
 
 // Admin pages
@@ -88,7 +89,8 @@ function App() {
           <Routes>
             {/* Public */}
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-            {/* /register is for gym owner signup only — redirect members to login */}
+            <Route path="/member-login" element={<PublicRoute><MemberLogin /></PublicRoute>} />
+            {/* /register is for gym owner signup only — members are added by admin */}
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
             {/* Admin */}
