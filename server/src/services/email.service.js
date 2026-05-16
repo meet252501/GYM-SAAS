@@ -13,26 +13,36 @@ class EmailService {
       },
       tls: { rejectUnauthorized: false },
     });
+
+    // Verify connection on startup (non-blocking)
+    if (process.env.EMAIL_USER) {
+      this.transporter.verify()
+        .then(() => logger.info(`✅ Email service ready — sending as "GymFlow Pro" <${process.env.EMAIL_USER}>`))
+        .catch(err => logger.warn(`⚠️ Email service not connected: ${err.message}`));
+    }
   }
 
   async sendEmail(to, subject, text, html) {
     try {
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        logger.warn('Email skipped — EMAIL_USER / EMAIL_PASS not set in environment');
+        return null;
+      }
       const info = await this.transporter.sendMail({
-        from: `"${process.env.GYM_NAME || 'GymFlow Pro'}" <${process.env.EMAIL_FROM || 'noreply@gymflow.com'}>`,
+        from: `"GymFlow Pro" <${process.env.EMAIL_USER}>`,
         to,
         subject,
         text,
         html,
       });
-
-      logger.info(`Message sent: ${info.messageId}`);
+      logger.info(`Email sent to ${to} — ID: ${info.messageId}`);
       return info;
     } catch (error) {
       logger.error('Error sending email:', error);
-      // In a real app, you might want to retry or use a fallback
       return null;
     }
   }
+
 
   async sendWelcomeEmail(user) {
     const subject = `Welcome to the Workforce, ${user.firstName}!`;
