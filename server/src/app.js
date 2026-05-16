@@ -35,7 +35,21 @@ app.use((req, res, next) => {
 app.use(helmet());
 app.use(mongoSanitize());
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    const allowed = [
+      process.env.CLIENT_URL,
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://gymflow-lilac-seven.vercel.app',
+      'https://gymflow.pages.dev',
+    ].filter(Boolean);
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowed.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.pages.dev')) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true
 }));
 
