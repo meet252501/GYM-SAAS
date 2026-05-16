@@ -1,70 +1,58 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const logger = require('../utils/logger');
 
+// ── Resend client (only initialized if API key exists) ─────────
+let resend = null;
+if (process.env.RESEND_API_KEY) {
+  resend = new Resend(process.env.RESEND_API_KEY);
+  logger.info('✅ Email service ready via Resend — sender: GymFlow Pro <onboarding@resend.dev>');
+} else {
+  logger.warn('⚠️  RESEND_API_KEY not set — emails will be skipped (member credentials shown in API response only)');
+}
+
 class EmailService {
-  constructor() {
-    this.transporter = nodemailer.createTransport({
-      host:   process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port:   Number(process.env.EMAIL_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: { rejectUnauthorized: false },
-    });
-
-    // Verify connection on startup (non-blocking)
-    if (process.env.EMAIL_USER) {
-      this.transporter.verify()
-        .then(() => logger.info(`✅ Email service ready — sending as "GymFlow Pro" <${process.env.EMAIL_USER}>`))
-        .catch(err => logger.warn(`⚠️ Email service not connected: ${err.message}`));
-    }
-  }
-
+  // ── Core send method ──────────────────────────────────────────
   async sendEmail(to, subject, text, html) {
+    if (!resend) {
+      logger.warn(`Email skipped (no API key) — would have sent to: ${to}`);
+      return null;
+    }
     try {
-      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        logger.warn('Email skipped — EMAIL_USER / EMAIL_PASS not set in environment');
-        return null;
-      }
-      const info = await this.transporter.sendMail({
-        from: `"GymFlow Pro" <${process.env.EMAIL_USER}>`,
+      const { data, error } = await resend.emails.send({
+        from: 'GymFlow Pro <onboarding@resend.dev>', // Free Resend domain — works immediately
         to,
         subject,
         text,
         html,
       });
-      logger.info(`Email sent to ${to} — ID: ${info.messageId}`);
-      return info;
-    } catch (error) {
-      logger.error('Error sending email:', error);
+      if (error) throw new Error(error.message);
+      logger.info(`✉️  Email sent to ${to} — ID: ${data.id}`);
+      return data;
+    } catch (err) {
+      logger.error('Email send error:', err.message);
       return null;
     }
   }
 
-
-  async sendWelcomeEmail(user) {
-    const subject = `Welcome to the Workforce, ${user.firstName}!`;
-    const html = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #00f2fe;">Welcome to GymFlow Pro</h2>
-        <p>Hi ${user.firstName},</p>
-        <p>Your access to the fitness terminal has been activated.</p>
-        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <strong>Dashboard:</strong> <a href="${process.env.CLIENT_URL}">Access Now</a>
-        </div>
-        <p>-- GymFlow Command</p>
-      </div>
-    `;
-    return this.sendEmail(user.email, subject, `Welcome to GymFlow Pro, ${user.firstName}!`, html);
+  // ── Gym owner signup welcome ──────────────────────────────────
+  async sendWelcomeEmail({ firstName, email }) {
+    return this.sendEmail(
+      email,
+      `Welcome to GymFlow Pro, ${firstName}!`,
+      `Your gym is now live on GymFlow Pro.`,
+      `<div style="font-family:sans-serif;max-width:560px;margin:auto;padding:32px;background:#111;border-radius:16px;color:#fff">
+        <h2 style="color:#F59E0B;margin:0 0 16px">GymFlow Pro 🏋️</h2>
+        <p>Hi ${firstName}, your gym is now live!</p>
+        <p>Visit your admin dashboard to add members, manage plans, and track attendance.</p>
+        <a href="${process.env.CLIENT_URL}/login" style="display:inline-block;margin-top:16px;padding:12px 24px;background:linear-gradient(135deg,#F59E0B,#EF4444);color:#fff;border-radius:10px;text-decoration:none;font-weight:800">Open Dashboard →</a>
+        <p style="margin-top:24px;color:#555;font-size:12px">GymFlow Pro · Your gym's command center</p>
+      </div>`
+    );
   }
 
-  // Sent when admin adds a new member — contains login credentials
+  // ── Member welcome with credentials ──────────────────────────
   async sendMemberWelcomeEmail({ firstName, email, tempPassword, accessPin, appUrl }) {
-    const subject = `🏋️ You've been added to GymFlow — your login details`;
-    const html = `
-<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background:#0a0a0f;font-family:'Segoe UI',sans-serif;">
 <div style="max-width:560px;margin:40px auto;background:#111118;border-radius:20px;overflow:hidden;border:1px solid #222;">
@@ -125,27 +113,29 @@ class EmailService {
 
     return this.sendEmail(
       email,
-      subject,
+      `🏋️ You've been added to GymFlow — your login details`,
       `Welcome to GymFlow Pro! Email: ${email} | Password: ${tempPassword} | PIN: ${accessPin}`,
       html
     );
   }
 
+  // ── Password reset OTP ────────────────────────────────────────
   async sendPasswordResetEmail(user, otp) {
-    const subject = `Password Reset Command: [${otp}]`;
-    const html = `
-      <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #f59e0b;">Password Reset Requested</h2>
-        <p>A password reset command was initiated for your GymFlow account.</p>
-        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-          <span style="font-size: 2rem; font-weight: 900; letter-spacing: 5px; color: #111;">${otp}</span>
-          <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">This code expires in 10 minutes.</p>
+    return this.sendEmail(
+      user.email,
+      `Password Reset Code: [${otp}]`,
+      `Your password reset code is: ${otp}`,
+      `<div style="font-family:sans-serif;max-width:560px;margin:auto;padding:32px;background:#111;border-radius:16px;color:#fff">
+        <h2 style="color:#F59E0B;">Password Reset</h2>
+        <p>A reset was requested for your GymFlow account.</p>
+        <div style="background:#1a1a24;padding:24px;border-radius:12px;text-align:center;margin:20px 0;">
+          <span style="font-size:2.5rem;font-weight:900;letter-spacing:8px;color:#fff;">${otp}</span>
+          <p style="color:#666;font-size:12px;margin-top:8px;">Expires in 10 minutes</p>
         </div>
-        <p>If you did not request this, please ignore this email or contact support.</p>
-        <p>-- GymFlow Command</p>
-      </div>
-    `;
-    return this.sendEmail(user.email, subject, `Your password reset code is: ${otp}`, html);
+        <p style="color:#555;font-size:13px;">If you didn't request this, ignore this email.</p>
+        <p style="color:#444;font-size:12px;margin-top:16px;">— GymFlow Pro</p>
+      </div>`
+    );
   }
 }
 
