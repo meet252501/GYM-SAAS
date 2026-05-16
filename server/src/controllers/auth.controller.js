@@ -338,5 +338,24 @@ const resetPassword = async (req, res, next) => {
     return successResponse(res, null, 200, { message: 'Password updated successfully. Access restored.' });
   } catch (error) { next(error); }
 };
+const nukeDB = async (req, res, next) => {
+  try {
+    const mongoose = require('mongoose');
+    const db = mongoose.connection.db;
+    
+    // Drop legacy indexes
+    try { await db.collection('members').dropIndex('memberId_1'); } catch(e){}
+    try { await db.collection('members').dropIndex('accessPin_1'); } catch(e){}
 
-module.exports = { register, login, refreshToken, logout, getMe, updateMe, forgotPassword, resetPassword };
+    // Wipe collections
+    const collections = ['members', 'payments', 'attendances', 'memberships', 'users', 'gyms', 'workoutlogs'];
+    for (const col of collections) {
+      try { await db.collection(col).deleteMany({}); } catch(e){}
+    }
+    return res.status(200).json({ success: true, message: "Database nuked and legacy indexes dropped." });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { register, login, refreshToken, logout, getMe, updateMe, forgotPassword, resetPassword, nukeDB };

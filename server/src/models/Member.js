@@ -11,7 +11,7 @@ const memberSchema = new mongoose.Schema({
   dateOfBirth: Date,
   gender: { type: String, enum: ['male', 'female', 'other'] },
   photo: { type: String, default: '' },
-  accessPin: { type: String, unique: true, sparse: true },
+  accessPin: { type: String, sparse: true },
 
   // Emergency
   emergencyContact: {
@@ -42,7 +42,7 @@ const memberSchema = new mongoose.Schema({
   }],
 
   // Member card
-  memberId: { type: String, unique: true },
+  memberId: { type: String },
 
   // Membership
   currentMembershipId: { type: mongoose.Schema.Types.ObjectId, ref: 'Membership' },
@@ -106,7 +106,7 @@ memberSchema.pre('save', async function (next) {
       let exists = true;
       while (exists) {
         pin = Math.floor(1000 + Math.random() * 9000).toString();
-        const found = await mongoose.model('Member').findOne({ accessPin: pin });
+        const found = await mongoose.model('Member').findOne({ gymId: this.gymId, accessPin: pin });
         if (!found) exists = false;
       }
       this.accessPin = pin;
@@ -116,6 +116,8 @@ memberSchema.pre('save', async function (next) {
 });
 
 memberSchema.index({ gymId: 1, membershipStatus: 1 });
+memberSchema.index({ gymId: 1, memberId: 1 }, { unique: true });
+memberSchema.index({ gymId: 1, accessPin: 1 }, { unique: true, sparse: true });
 memberSchema.index({ membershipExpiry: 1 });
 
 module.exports = mongoose.model('Member', memberSchema);
