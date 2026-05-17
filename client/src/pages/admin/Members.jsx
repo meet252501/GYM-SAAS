@@ -105,9 +105,9 @@ function AddMemberModal({ isOpen, onClose, onSuccess }) {
               {...register('gender')}
               style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
             >
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
+              <option value="male" style={{ background: '#111', color: '#fff' }}>Male</option>
+              <option value="female" style={{ background: '#111', color: '#fff' }}>Female</option>
+              <option value="other" style={{ background: '#111', color: '#fff' }}>Other</option>
             </select>
           </div>
         </div>
@@ -119,9 +119,9 @@ function AddMemberModal({ isOpen, onClose, onSuccess }) {
             {...register('planId')}
             style={{ borderRadius: 12, background: 'rgba(255,255,255,0.02)' }}
           >
-            <option value="">Select Plan...</option>
+            <option value="" style={{ background: '#111', color: '#fff' }}>Select Plan...</option>
             {plans.map(p => (
-              <option key={p._id} value={p._id}>{p.name} - ₹{p.price}</option>
+              <option key={p._id} value={p._id} style={{ background: '#111', color: '#fff' }}>{p.name} - ₹{p.price}</option>
             ))}
           </select>
           {errors.planId && <span style={{ fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 700 }}>{errors.planId.message}</span>}
@@ -350,11 +350,11 @@ export default function Members() {
                 onChange={e => setFilterStatus(e.target.value)}
                 style={{ paddingLeft: 48, borderRadius: 18, width: 180, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}
               >
-                <option value="all">ALL ENTITIES</option>
-                <option value="active">ACTIVE ONLY</option>
-                <option value="trial">PROVISIONAL</option>
-                <option value="expired">EXPIRED</option>
-                <option value="suspended">FLAGGED</option>
+                <option value="all" style={{ background: '#111', color: '#fff' }}>ALL ENTITIES</option>
+                <option value="active" style={{ background: '#111', color: '#fff' }}>ACTIVE ONLY</option>
+                <option value="trial" style={{ background: '#111', color: '#fff' }}>PROVISIONAL</option>
+                <option value="expired" style={{ background: '#111', color: '#fff' }}>EXPIRED</option>
+                <option value="suspended" style={{ background: '#111', color: '#fff' }}>FLAGGED</option>
               </select>
             </div>
           </div>

@@ -192,6 +192,15 @@ const selfCheckin = async (req, res, next) => {
 
     await updateStreak(member);
 
+    // Emit live update to terminal
+    if (global.io) {
+      global.io.to(member.gymId.toString()).emit('attendance_update', {
+        type: 'check_in',
+        member: { id: member._id, firstName: member.firstName, lastName: member.lastName, photo: member.photo },
+        time: new Date()
+      });
+    }
+
     return successResponse(res, { attendance, member }, 'Attendance marked successfully');
   } catch (error) { next(error); }
 };
@@ -248,6 +257,15 @@ const dynamicPinCheckin = async (req, res, next) => {
     });
 
     await updateStreak(member);
+
+    // Emit live update to terminal
+    if (global.io) {
+      global.io.to(member.gymId.toString()).emit('attendance_update', {
+        type: 'check_in',
+        member: { id: member._id, firstName: member.firstName, lastName: member.lastName, photo: member.photo },
+        time: new Date()
+      });
+    }
 
     return successResponse(res, { attendance, member }, 'Attendance marked successfully');
   } catch (error) { next(error); }
