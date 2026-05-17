@@ -178,12 +178,25 @@ const updateMember = async (req, res, next) => {
 // @route   DELETE /api/v1/members/:id
 const deleteMember = async (req, res, next) => {
   try {
-    const member = await Member.findOneAndUpdate(
-      { _id: req.params.id, gymId: req.user.gymId },
-      { isActive: false }, { new: true }
-    );
+    const member = await Member.findOne({ _id: req.params.id, gymId: req.user.gymId });
     if (!member) return errorResponse(res, 'Member not found', 404);
-    return successResponse(res, { message: 'Member deactivated' });
+    
+    // Perform a HARD DELETE of all associated records
+    await Member.deleteOne({ _id: member._id });
+    if (member.userId) {
+      await User.deleteOne({ _id: member.userId });
+    }
+    
+    // Cleanup related collections
+    const { Membership } = require('../models/Membership');
+    const Payment = require('../models/Payment');
+    const Attendance = require('../models/Attendance');
+    
+    await Membership.deleteMany({ memberId: member._id });
+    await Payment.deleteMany({ memberId: member._id });
+    await Attendance.deleteMany({ memberId: member._id });
+    
+    return successResponse(res, { message: 'Member and all associated data permanently deleted' });
   } catch (error) { next(error); }
 };
 
