@@ -54,8 +54,8 @@ export default function Leaderboard() {
     fetchLeaderboard();
   }, []);
 
-  const filtered = leaderboard.filter(u =>
-    u.name.toLowerCase().includes(search.toLowerCase())
+  const filtered = (Array.isArray(leaderboard) ? leaderboard : []).filter(u =>
+    (u?.name || '').toLowerCase().includes(search.toLowerCase())
   );
 
   // Podium order: 2nd left, 1st center, 3rd right
@@ -138,8 +138,8 @@ export default function Leaderboard() {
 
               {/* Name + tier */}
               <div style={{ textAlign: 'center', marginBottom: 10 }}>
-                <div style={{ fontWeight: 800, fontSize: isChampion ? '1rem' : '0.88rem' }}>{user.name.split(' ')[0]}</div>
-                <span className={`badge badge-${user.tier.toLowerCase()}`} style={{ fontSize: '0.62rem', padding: '2px 8px', marginTop: 4 }}>{user.tier}</span>
+                <div style={{ fontWeight: 800, fontSize: isChampion ? '1rem' : '0.88rem' }}>{(user?.name || '---').split(' ')[0]}</div>
+                <span className={`badge badge-${(user?.tier || 'common').toLowerCase()}`} style={{ fontSize: '0.62rem', padding: '2px 8px', marginTop: 4 }}>{user?.tier || 'Common'}</span>
               </div>
 
               {/* Podium platform */}
@@ -221,7 +221,7 @@ export default function Leaderboard() {
                         <span style={{ fontWeight: 600 }}>{user.name}</span>
                       </div>
                     </td>
-                    <td><span className={`badge badge-${user.tier.toLowerCase()}`}>{user.tier}</span></td>
+                    <td><span className={`badge badge-${(user?.tier || 'common').toLowerCase()}`}>{user?.tier || 'Common'}</span></td>
                     <td style={{ fontWeight: 800 }}>{user.points.toLocaleString()}</td>
                     <td><StreakBadge count={user.streak} /></td>
                     <td><RankChange change={user.change} /></td>
