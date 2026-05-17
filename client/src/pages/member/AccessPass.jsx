@@ -253,24 +253,13 @@ export default function AccessPass() {
             </div>
           </div>
 
-          {/* QR Code Identification */}
-          <div style={{ 
-            display: 'flex', justifyContent: 'center', paddingTop: '32px', paddingBottom: '8px'
-          }}>
-            <div style={{
-              background: 'white', padding: '16px', borderRadius: '24px', 
-              boxShadow: `0 0 30px ${cfg.color}30`,
-              border: `2px solid ${cfg.color}40`
-            }}>
-              <QRCodeSVG 
-                value={memberId}
-                size={140}
-                bgColor="#ffffff"
-                fgColor="#000000"
-                level="H"
-                includeMargin={false}
-              />
+          {/* Scanner Option Prompt */}
+          <div style={{ padding: '32px 24px 0', textAlign: 'center' }}>
+            <div style={{ width: '64px', height: '64px', background: 'rgba(255,255,255,0.05)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: `1px solid ${cfg.color}40` }}>
+              <Camera size={28} color={cfg.color} />
             </div>
+            <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', fontWeight: 900, color: '#fff' }}>Terminal Check-in</h3>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-3)' }}>Enter the terminal PIN below or tap Scan Terminal QR above.</p>
           </div>
 
           {/* Dynamic PIN Input Section */}
