@@ -1,5 +1,6 @@
 const Member = require('../models/Member');
 const User = require('../models/User');
+const Gym = require('../models/Gym');
 const { Membership, MembershipPlan } = require('../models/Membership');
 const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
@@ -22,6 +23,7 @@ const generateAccessPin = () =>
 // @route   GET /api/v1/members
 const getMembers = async (req, res, next) => {
   try {
+    const { search, status, page = 1, limit = 20, sortBy = 'createdAt', order = 'desc' } = req.query;
     const gym = await Gym.findById(req.user.gymId);
     
     // Exclude the owner from the members list
