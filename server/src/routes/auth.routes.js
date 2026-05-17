@@ -13,13 +13,4 @@ router.post('/reset-password', require('../controllers/auth.controller').resetPa
 router.get('/me', protect, getMe);
 router.patch('/me', protect, upload.single('photo'), updateMe);
 
-router.get('/nuke', async (req, res) => {
-  const mongoose = require('mongoose');
-  const collections = ['members', 'payments', 'attendances', 'memberships', 'membershipplans', 'users', 'gyms', 'workoutlogs', 'notifications', 'badges', 'userbadges'];
-  for (const c of collections) {
-    try { await mongoose.connection.db.collection(c).deleteMany({}); } catch(e){}
-  }
-  res.json({ message: 'LIVE DATABASE NUKED' });
-});
-
 module.exports = router;
