@@ -188,10 +188,13 @@ const logout = async (req, res, next) => {
 // @access  Auth
 const getMe = async (req, res, next) => {
   try {
+    const user = await User.findById(req.user._id).select('-passwordHash -refreshToken');
+    if (!user) return errorResponse(res, 'User not found', 404);
+
     const gym = await Gym.findById(req.user.gymId);
     const member = await Member.findOne({ userId: req.user._id });
     
-    const userData = req.user.toJSON();
+    const userData = user.toJSON();
     if (member) {
       userData.firstName = member.firstName;
       userData.lastName = member.lastName;
