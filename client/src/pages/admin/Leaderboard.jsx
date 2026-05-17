@@ -43,7 +43,7 @@ export default function Leaderboard() {
     const fetchLeaderboard = async () => {
       try {
         const res = await membersApi.getLeaderboard();
-        setLeaderboard(res.data || []);
+        setLeaderboard(res.data?.data || []);
       } catch (err) {
         toast.error('Failed to load leaderboard');
         console.error(err);
