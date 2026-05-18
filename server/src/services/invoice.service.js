@@ -24,7 +24,7 @@ class InvoiceService {
           .text(gym.phone || 'Gym Contact', 200, 65, { align: 'right' })
           .moveDown();
 
-        doc.heightLine(1).strokeColor('#cccccc').moveTo(50, 90).lineTo(550, 90).stroke();
+        doc.lineWidth(1).strokeColor('#cccccc').moveTo(50, 90).lineTo(550, 90).stroke();
 
         // Invoice Info
         doc

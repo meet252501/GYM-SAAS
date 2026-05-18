@@ -442,9 +442,9 @@ export default function Members() {
                     </td>
                     <td style={{ border: 'none', borderRadius: '0 20px 20px 0', textAlign: 'right', paddingRight: 20 }}>
                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                          <button className="action-btn" title="Edit Biometrics" style={{ color: 'var(--text-3)' }}><Edit size={16} /></button>
-                          <button className="action-btn" title="Assign Protocol" style={{ color: 'var(--primary)' }} onClick={() => handleAssignClick(member)}><Zap size={16} /></button>
-                          <button className="action-btn" title="Terminate Access" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(member.id)}><Trash2 size={16} /></button>
+                          <button className="btn-icon" title="Edit Biometrics" style={{ color: 'var(--text-3)' }}><Edit size={16} /></button>
+                          <button className="btn-icon" title="Assign Protocol" style={{ color: 'var(--primary)' }} onClick={() => handleAssignClick(member)}><Zap size={16} /></button>
+                          <button className="btn-icon" title="Terminate Access" style={{ color: 'var(--danger)' }} onClick={() => handleDelete(member.id)}><Trash2 size={16} /></button>
                        </div>
                     </td>
                   </motion.tr>
