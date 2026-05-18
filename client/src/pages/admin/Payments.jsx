@@ -150,6 +150,32 @@ export default function Payments() {
     }
   };
 
+  const exportToCSV = () => {
+    if (payments.length === 0) return toast.error("No transactions to export");
+    
+    const headers = ["Invoice ID", "Member Name", "Category", "Date", "Amount", "Status", "Gateway"];
+    const rows = payments.map(tx => [
+      `"${tx._id}"`,
+      `"${tx.memberName}"`,
+      `"${tx.type ? tx.type.toUpperCase() : 'N/A'}"`,
+      `"${new Date(tx.createdAt).toLocaleDateString()}"`,
+      `"${tx.amount || 0}"`,
+      `"${tx.status.toUpperCase()}"`,
+      `"${(tx.gateway || 'cash').toUpperCase()}"`
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `gymflow_financials_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Financial records exported");
+  };
+
   const statusStyle = status => ({
     completed: 'badge-active',
     pending: 'badge-trial',
@@ -175,7 +201,7 @@ export default function Payments() {
             <button className="btn btn-ghost" onClick={handleOpenPlanModal}>
               <Receipt size={18} /> Manage Plans
             </button>
-            <button className="btn btn-ghost" onClick={() => toast.success("Exporting...")}>
+            <button className="btn btn-ghost" onClick={exportToCSV}>
               <Download size={18} /> Export
             </button>
             <button className="btn btn-primary" onClick={() => setIsRecordModalOpen(true)}>
