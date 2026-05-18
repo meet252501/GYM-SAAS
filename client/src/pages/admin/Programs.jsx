@@ -11,6 +11,7 @@ import { workoutsApi, membersApi } from '../../api';
 import Modal from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 import CyberMatrix from '../../components/ui/CyberMatrix';
+import MemberSelector from '../../components/ui/MemberSelector';
 
 export default function AdminPrograms() {
   const [programs, setPrograms] = useState([]);
@@ -239,18 +240,11 @@ export default function AdminPrograms() {
       >
         <form onSubmit={handleAssign} className="space-y-4">
           <div className="form-group">
-            <label className="form-label">Target Member</label>
-            <select 
-              className="form-select" 
-              required
-              value={assignForm.memberId}
-              onChange={e => setAssignForm({...assignForm, memberId: e.target.value})}
-            >
-              <option value="">Select Member...</option>
-              {members.map(m => (
-                <option key={m._id} value={m._id}>{m.firstName} {m.lastName}</option>
-              ))}
-            </select>
+            <MemberSelector 
+              selectedId={assignForm.memberId} 
+              onSelect={(id) => setAssignForm({...assignForm, memberId: id})} 
+              placeholder="Search member to assign..."
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Deployment Start Date</label>

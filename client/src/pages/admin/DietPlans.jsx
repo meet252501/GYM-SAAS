@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Utensils, Plus, Search, Edit3, Trash2, Droplet, Flame, CheckCircle, X, Users, Info } from 'lucide-react';
 import { dietPlanApi, membersApi } from '../../api';
+import MemberSelector from '../../components/ui/MemberSelector';
 
 export default function DietPlans() {
   const [search, setSearch] = useState('');
@@ -290,18 +291,11 @@ export default function DietPlans() {
               </div>
               <form onSubmit={handleAssign} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div className="form-group">
-                  <label className="form-label">Select Member</label>
-                  <select 
-                    className="form-select" 
-                    required
-                    value={assignForm.memberId}
-                    onChange={e => setAssignForm({ memberId: e.target.value })}
-                  >
-                    <option value="">-- Select Member --</option>
-                    {members.map(m => (
-                      <option key={m._id} value={m._id}>{m.firstName} {m.lastName} ({m.memberId})</option>
-                    ))}
-                  </select>
+                  <MemberSelector 
+                    selectedId={assignForm.memberId} 
+                    onSelect={(id) => setAssignForm({ memberId: id })} 
+                    placeholder="Search member to assign..."
+                  />
                 </div>
                 <div className="p-3 bg-primary/5 rounded-xl border border-primary/10 flex gap-3">
                   <Info className="text-primary flex-shrink-0" size={18} />

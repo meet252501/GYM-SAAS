@@ -93,6 +93,25 @@ function ClassModal({ onClose, onSave, existing }) {
 
 // ─── Manage Attendees Modal ──────────────────────────────────
 function AttendeesModal({ cls, onClose }) {
+  const [attendees, setAttendees] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchAttendees() {
+      try {
+        const { data } = await classesApi.getAttendees(cls.id);
+        if (data.success) {
+          setAttendees(data.data.attendees || []);
+        }
+      } catch (err) {
+        console.error('Failed to load attendees', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAttendees();
+  }, [cls.id]);
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className="modal" style={{ maxWidth: 400 }}>
@@ -101,7 +120,23 @@ function AttendeesModal({ cls, onClose }) {
           <button className="btn btn-ghost btn-icon" onClick={onClose}><X size={18} /></button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 340, overflowY: 'auto' }}>
-          <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-3)' }}>Attendee list not available in this view.</div>
+          {loading ? (
+            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-3)' }}>Loading attendees...</div>
+          ) : attendees.length > 0 ? (
+            attendees.map(member => (
+              <div key={member._id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', background: 'var(--surface-2)', borderRadius: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary-surface)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                  {member.firstName?.[0]}{member.lastName?.[0]}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600 }}>{member.firstName} {member.lastName}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{member.email || member.phone || 'No contact info'}</div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-3)' }}>No members booked for the upcoming session.</div>
+          )}
         </div>
         <div style={{ marginTop: 16, textAlign: 'right' }}>
           <button className="btn btn-ghost" onClick={onClose}>Close</button>

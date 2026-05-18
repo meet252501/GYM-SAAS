@@ -34,6 +34,14 @@ exports.updateSettings = async (req, res, next) => {
     }
 
     const updateData = { ...req.body };
+    if (updateData.settings && typeof updateData.settings === 'string') {
+      try {
+        updateData.settings = JSON.parse(updateData.settings);
+      } catch (e) {
+        logger.error('Failed to parse gym settings JSON');
+      }
+    }
+    
     if (req.file) {
       updateData.logo = req.file.path; // Cloudinary URL
     }

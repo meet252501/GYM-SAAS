@@ -36,7 +36,9 @@ const gymSchema = new mongoose.Schema({
     workingHours: {
       open: { type: String, default: '06:00' },
       close: { type: String, default: '22:00' }
-    }
+    },
+    notifications: { type: mongoose.Schema.Types.Mixed, default: {} },
+    app: { type: mongoose.Schema.Types.Mixed, default: {} }
   },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });

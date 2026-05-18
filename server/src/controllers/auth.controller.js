@@ -331,4 +331,33 @@ const resetPassword = async (req, res, next) => {
     return successResponse(res, null, 200, { message: 'Password updated successfully. Access restored.' });
   } catch (error) { next(error); }
 };
-module.exports = { register, login, refreshToken, logout, getMe, updateMe, forgotPassword, resetPassword };
+// @route   PATCH /api/v1/auth/password
+// @access  Auth
+const updatePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword, twoFactorEnabled } = req.body;
+    
+    const user = await User.findById(req.user._id);
+    if (!user) return errorResponse(res, 'User not found', 404);
+
+    if (currentPassword && newPassword) {
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        return errorResponse(res, 'Incorrect current password', 400);
+      }
+      user.passwordHash = newPassword; // Pre-save hook hashes it
+    }
+
+    if (typeof twoFactorEnabled === 'boolean') {
+      user.twoFactorEnabled = twoFactorEnabled;
+    }
+
+    await user.save();
+
+    return successResponse(res, { message: 'Security settings updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { register, login, refreshToken, logout, getMe, updateMe, forgotPassword, resetPassword, updatePassword };

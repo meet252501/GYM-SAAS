@@ -136,12 +136,16 @@ describe('AI Controller', () => {
   });
 
   describe('chatWithAI', () => {
-    it('should return 500 if API key is not configured', async () => {
+    it('should return fallback response if API key is not configured', async () => {
       delete process.env.GROQ_API_KEY;
+      req.body.messages = [{ role: 'user', content: 'chest' }];
 
       await aiController.chatWithAI(req, res);
 
-      expect(errorResponse).toHaveBeenCalledWith(res, 'AI Service Key not configured', 500);
+      expect(successResponse).toHaveBeenCalledWith(res, expect.objectContaining({
+        reply: expect.stringContaining('Chest Protocol'),
+        source: 'local'
+      }));
     });
 
     it('should successfully proxy to Groq and return response', async () => {

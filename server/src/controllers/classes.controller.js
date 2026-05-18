@@ -256,6 +256,39 @@ const getMemberBookings = async (req, res, next) => {
   }
 };
 
+// GET /api/v1/classes/:id/attendees
+const getClassAttendees = async (req, res, next) => {
+  try {
+    const gymClass = await GymClass.findById(req.params.id);
+    if (!gymClass) return errorResponse(res, 'Class not found', 404);
+
+    if (gymClass.gymId.toString() !== req.user.gymId?.toString()) {
+      return errorResponse(res, 'Not authorized', 403);
+    }
+
+    // Find the next upcoming session, or the most recent one if none in the future
+    const now = new Date();
+    let session = await ClassSession.findOne({ classId: req.params.id, startsAt: { $gte: now } }).sort({ startsAt: 1 });
+    
+    if (!session) {
+      session = await ClassSession.findOne({ classId: req.params.id }).sort({ startsAt: -1 });
+    }
+
+    if (!session) {
+      return successResponse(res, { session: null, attendees: [] });
+    }
+
+    const bookings = await ClassBooking.find({ sessionId: session._id, status: 'booked' })
+      .populate('memberId', 'firstName lastName memberId photo email phone currentMetrics');
+
+    const attendees = bookings.map(b => b.memberId).filter(Boolean);
+
+    return successResponse(res, { session, attendees });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // PUT /api/v1/classes/:id
 const updateClass = async (req, res, next) => {
   try {
@@ -305,5 +338,6 @@ module.exports = {
   createSession,
   bookSession,
   cancelBooking,
-  getMemberBookings
+  getMemberBookings,
+  getClassAttendees
 };

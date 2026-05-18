@@ -4,7 +4,7 @@ import {
   Building, Mail, Bell, Shield, Smartphone, Save,
   CheckCircle, Camera
 } from 'lucide-react';
-import { gymApi } from '../../api';
+import { gymApi, authApi } from '../../api';
 import CyberMatrix from '../../components/ui/CyberMatrix';
 
 function ToggleSwitch({ value, onChange }) {
@@ -69,7 +69,7 @@ export default function Settings() {
           setGeneralForm({ 
             gymName: gym.name || '', 
             tagline: gym.tagline || '', 
-            timezone: gym.timezone || 'Asia/Kolkata',
+            timezone: gym.settings?.timezone || 'Asia/Kolkata',
             logo: gym.logo || ''
           });
           setContactForm({ 
@@ -78,6 +78,18 @@ export default function Settings() {
             address: gym.address?.street ? `${gym.address.street}, ${gym.address.city}` : '', 
             website: gym.website || '' 
           });
+          
+          if (gym.settings?.notifications) {
+            setNotifications(prev => ({ ...prev, ...gym.settings.notifications }));
+          }
+          if (gym.settings?.app) {
+            setAppForm(prev => ({ ...prev, ...gym.settings.app }));
+          }
+        }
+        
+        const userRes = await authApi.getMe();
+        if (userRes.data?.success) {
+          setSecurityForm(f => ({ ...f, twoFactor: userRes.data.data.user.twoFactorEnabled || false }));
         }
       } catch (error) {
         console.error('Failed to fetch gym settings:', error);
@@ -108,6 +120,11 @@ export default function Settings() {
       formData.append('timezone', generalForm.timezone);
       formData.append('email', contactForm.email);
       formData.append('phone', contactForm.phone);
+      
+      formData.append('settings', JSON.stringify({
+        notifications: notifications,
+        app: appForm
+      }));
       
       if (generalForm.logoFile) {
         formData.append('logo', generalForm.logoFile);
@@ -280,11 +297,30 @@ export default function Settings() {
               <ToggleSwitch value={securityForm.twoFactor} onChange={v => setSecurityForm(f => ({ ...f, twoFactor: v }))} />
             </div>
             <div className="flex justify-end" style={{ paddingTop: 12 }}>
-              <motion.button whileTap={{ scale: 0.96 }} className="btn btn-primary" onClick={() => {
-                setToast(true); setTimeout(() => setToast(false), 3000);
-                setSecurityForm(f => ({ ...f, currentPassword: '', newPassword: '', confirmPassword: '' }));
-              }}>
-                <Shield size={15} /> Update Security
+              <motion.button whileTap={{ scale: 0.96 }} className="btn btn-primary" onClick={async () => {
+                if (securityForm.newPassword !== securityForm.confirmPassword) {
+                  alert('New passwords do not match');
+                  return;
+                }
+                setSaving(true);
+                try {
+                  const { data } = await authApi.updatePassword({
+                    currentPassword: securityForm.currentPassword,
+                    newPassword: securityForm.newPassword,
+                    twoFactorEnabled: securityForm.twoFactor
+                  });
+                  if (data.success) {
+                    setToast(true); setTimeout(() => setToast(false), 3000);
+                    setSecurityForm(f => ({ ...f, currentPassword: '', newPassword: '', confirmPassword: '' }));
+                  }
+                } catch (err) {
+                  alert(err.response?.data?.message || 'Failed to update security settings');
+                } finally {
+                  setSaving(false);
+                }
+              }} disabled={saving}>
+                {saving ? <span className="spinner" style={{ width: 14, height: 14 }} /> : <Shield size={15} />}
+                {saving ? 'Updating...' : 'Update Security'}
               </motion.button>
             </div>
           </motion.div>

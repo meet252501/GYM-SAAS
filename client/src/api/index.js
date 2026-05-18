@@ -7,6 +7,7 @@ export const authApi = {
   refresh: (refreshToken) => client.post('/auth/refresh', { refreshToken }),
   getMe: () => client.get('/auth/me'),
   updateMe: (data) => client.patch('/auth/me', data),
+  updatePassword: (data) => client.patch('/auth/password', data),
 };
 
 export const membersApi = {
@@ -88,6 +89,7 @@ export const classesApi = {
   book: (sessionId) => client.post(`/classes/sessions/${sessionId}/book`),
   cancel: (bookingId) => client.post(`/classes/bookings/${bookingId}/cancel`),
   getMyBookings: () => client.get('/classes/bookings'),
+  getAttendees: (id) => client.get(`/classes/${id}/attendees`),
 };
 
 export const workoutsApi = {

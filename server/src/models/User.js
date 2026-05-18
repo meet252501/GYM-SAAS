@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
   lastLogin: Date,
   refreshToken: String,
   fcmToken: String,
+  twoFactorEnabled: { type: Boolean, default: false },
 
   // ─── Trainer Invite ───────────────────────────────────────────
   inviteToken: String,

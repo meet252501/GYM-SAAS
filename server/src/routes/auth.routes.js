@@ -12,5 +12,6 @@ router.post('/forgot-password', require('../controllers/auth.controller').forgot
 router.post('/reset-password', require('../controllers/auth.controller').resetPassword);
 router.get('/me', protect, getMe);
 router.patch('/me', protect, upload.single('photo'), updateMe);
+router.patch('/password', protect, require('../controllers/auth.controller').updatePassword);
 
 module.exports = router;

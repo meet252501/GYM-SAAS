@@ -57,6 +57,43 @@ export default function Profile() {
     }
   };
 
+  const togglePreference = async (key) => {
+    try {
+      const currentPrefs = user?.preferences || {};
+      const newPrefs = { ...currentPrefs, [key]: !currentPrefs[key] };
+      const res = await authApi.updateMe({ preferences: newPrefs });
+      updateUser(res.data.data.user);
+      toast.success('Preferences Updated');
+    } catch {
+      toast.error('Update Failed');
+    }
+  };
+
+  const [securityForm, setSecurityForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [updatingSecurity, setUpdatingSecurity] = useState(false);
+  const [showSecurityForm, setShowSecurityForm] = useState(false);
+
+  const handleUpdatePassword = async () => {
+    if (securityForm.newPassword !== securityForm.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    setUpdatingSecurity(true);
+    try {
+      await authApi.updatePassword({
+        currentPassword: securityForm.currentPassword,
+        newPassword: securityForm.newPassword
+      });
+      toast.success('Access Key Updated');
+      setSecurityForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setShowSecurityForm(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Update failed');
+    } finally {
+      setUpdatingSecurity(false);
+    }
+  };
+
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -216,43 +253,66 @@ export default function Profile() {
                 <div className="glass-card-premium mobile-p-5" style={{ padding: 32, borderRadius: 32 }}>
                    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                       {[
-                        { icon: <Bell size={20} />, label: 'Push Notifications', desc: 'Alerts for upcoming classes & goals', active: true },
-                        { icon: <Mail size={20} />, label: 'Email Reports', desc: 'Weekly progress and metabolic insights', active: false },
-                        { icon: <Heart size={20} />, label: 'Apple Health Sync', desc: 'Synchronize biometric data automatically', active: true },
-                      ].map((pref, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                              <div style={{ color: 'var(--primary)' }}>{pref.icon}</div>
-                              <div>
-                                 <div style={{ fontWeight: 800, fontSize: '1rem' }}>{pref.label}</div>
-                                 <div style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>{pref.desc}</div>
-                              </div>
-                           </div>
-                           <div style={{ width: 44, height: 24, borderRadius: 12, background: pref.active ? 'var(--primary)' : 'rgba(255,255,255,0.1)', padding: 4, cursor: 'pointer' }}>
-                              <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', marginLeft: pref.active ? 20 : 0, transition: '0.2s' }} />
-                           </div>
-                        </div>
-                      ))}
+                        { key: 'pushNotifications', icon: <Bell size={20} />, label: 'Push Notifications', desc: 'Alerts for upcoming classes & goals' },
+                        { key: 'emailNotifications', icon: <Mail size={20} />, label: 'Email Reports', desc: 'Weekly progress and metabolic insights' },
+                        { key: 'healthSync', icon: <Heart size={20} />, label: 'Apple Health Sync', desc: 'Synchronize biometric data automatically' },
+                      ].map((pref, i) => {
+                        const active = !!user?.preferences?.[pref.key];
+                        return (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                                <div style={{ color: 'var(--primary)' }}>{pref.icon}</div>
+                                <div>
+                                   <div style={{ fontWeight: 800, fontSize: '1rem' }}>{pref.label}</div>
+                                   <div style={{ color: 'var(--text-3)', fontSize: '0.8rem' }}>{pref.desc}</div>
+                                </div>
+                             </div>
+                             <div onClick={() => togglePreference(pref.key)} style={{ width: 44, height: 24, borderRadius: 12, background: active ? 'var(--primary)' : 'rgba(255,255,255,0.1)', padding: 4, cursor: 'pointer' }}>
+                                <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'white', marginLeft: active ? 20 : 0, transition: '0.2s' }} />
+                             </div>
+                          </div>
+                        );
+                      })}
                    </div>
                 </div>
               )}
 
               {activeTab === 'Security' && (
                 <div className="glass-card-premium mobile-p-5" style={{ padding: 32, borderRadius: 32 }}>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                      <button className="btn-secondary" style={{ width: '100%', padding: 20, borderRadius: 20, display: 'flex', justifyContent: 'space-between' }}>
-                         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><Lock size={18} /> Update Access Key</div>
-                         <ChevronRight size={18} />
-                      </button>
-                      <button className="btn-secondary" style={{ width: '100%', padding: 20, borderRadius: 20, display: 'flex', justifyContent: 'space-between' }}>
-                         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><Shield size={18} /> 2FA Authentication</div>
-                         <ChevronRight size={18} />
-                      </button>
-                      <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '8px 0' }} />
-                      <button className="btn-secondary" style={{ width: '100%', padding: 20, borderRadius: 20, color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                         <Trash2 size={18} /> TERMINATE ACCOUNT
-                      </button>
-                   </div>
+                   {showSecurityForm ? (
+                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                       <h4 style={{ margin: '0 0 8px', fontSize: '1.2rem', fontWeight: 800 }}>Update Access Key</h4>
+                       <div className="form-group">
+                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)', marginBottom: 8, display: 'block' }}>CURRENT PASSWORD</label>
+                         <input type="password" placeholder="Enter current password" value={securityForm.currentPassword} onChange={e => setSecurityForm(f => ({ ...f, currentPassword: e.target.value }))} className="form-input" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 16 }} />
+                       </div>
+                       <div className="form-group">
+                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)', marginBottom: 8, display: 'block' }}>NEW PASSWORD</label>
+                         <input type="password" placeholder="Enter new password" value={securityForm.newPassword} onChange={e => setSecurityForm(f => ({ ...f, newPassword: e.target.value }))} className="form-input" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 16 }} />
+                       </div>
+                       <div className="form-group">
+                         <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-3)', marginBottom: 8, display: 'block' }}>CONFIRM PASSWORD</label>
+                         <input type="password" placeholder="Confirm new password" value={securityForm.confirmPassword} onChange={e => setSecurityForm(f => ({ ...f, confirmPassword: e.target.value }))} className="form-input" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 16 }} />
+                       </div>
+                       <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                         <button onClick={() => setShowSecurityForm(false)} className="btn-secondary" style={{ flex: 1, padding: 16, borderRadius: 16 }}>CANCEL</button>
+                         <button onClick={handleUpdatePassword} disabled={updatingSecurity} className="btn-primary" style={{ flex: 1, padding: 16, borderRadius: 16 }}>
+                           {updatingSecurity ? <Loader2 className="animate-spin" size={18} /> : 'CONFIRM'}
+                         </button>
+                       </div>
+                     </div>
+                   ) : (
+                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <button onClick={() => setShowSecurityForm(true)} className="btn-secondary" style={{ width: '100%', padding: 20, borderRadius: 20, display: 'flex', justifyContent: 'space-between' }}>
+                           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}><Lock size={18} /> Update Access Key</div>
+                           <ChevronRight size={18} />
+                        </button>
+                        <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '8px 0' }} />
+                        <button className="btn-secondary" style={{ width: '100%', padding: 20, borderRadius: 20, color: 'var(--danger)', border: '1px solid rgba(239,68,68,0.2)' }}>
+                           <Trash2 size={18} /> TERMINATE ACCOUNT
+                        </button>
+                     </div>
+                   )}
                 </div>
               )}
 
